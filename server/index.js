@@ -92,17 +92,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      if (!existingUser.isVerified) {
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        existingUser.verificationCode = verificationCode;
-        existingUser.verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
-        existingUser.fullName = fullName;
-        existingUser.password = await bcrypt.hash(password, 12);
-        await existingUser.save();
-        sendVerificationEmail(email, verificationCode).catch(() => {});
-        return res.status(201).json({ message: 'Verification code resent', userId: existingUser._id });
-      }
-      return res.status(400).json({ error: 'Email already registered and verified' });
+      return res.status(400).json({ error: 'Email already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -113,6 +103,7 @@ app.post('/api/auth/register', async (req, res) => {
       fullName,
       email: email.toLowerCase(),
       password: hashedPassword,
+      isVerified: false,
       verificationCode,
       verificationExpiry
     });
@@ -120,7 +111,8 @@ app.post('/api/auth/register', async (req, res) => {
     await newUser.save();
     sendVerificationEmail(email, verificationCode).catch(() => {});
 
-    res.status(201).json({ message: 'Verification code sent to your email', userId: newUser._id });
+    const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: '7d' });
+    res.status(201).json({ message: 'Account created', token, user: { id: newUser._id, fullName: newUser.fullName, email: newUser.email, isVerified: false } });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -203,17 +195,8 @@ app.post('/api/auth/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'Incorrect password' });
 
-    if (!user.isVerified) {
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      user.verificationCode = verificationCode;
-      user.verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
-      await user.save();
-      sendVerificationEmail(email, verificationCode).catch(() => {});
-      return res.status(403).json({ error: 'Email not verified. New code sent.', needsVerification: true });
-    }
-
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ message: 'Login successful', token, user: { id: user._id, fullName: user.fullName, email: user.email } });
+    res.json({ message: 'Login successful', token, user: { id: user._id, fullName: user.fullName, email: user.email, isVerified: user.isVerified } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });

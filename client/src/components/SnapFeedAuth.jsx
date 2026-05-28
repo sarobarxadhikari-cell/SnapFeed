@@ -320,9 +320,11 @@ export default function SnapFeedMonolithicEngine() {
         return;
       }
       setIsProcessingNetworkSubmission(false);
+      localStorage.setItem('sf_token', data.token);
+      setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
       setVerificationEmail(formRegistrationState.contactChannelValue);
-      setActiveWorkflowPanel('emailVerification');
-      triggerNotification("Check your email for the code!");
+      setActiveWorkflowPanel('appNewsFeedDashboard');
+      triggerNotification("Account created! Verify email later from profile.");
     } catch (err) {
       setIsProcessingNetworkSubmission(false);
       setFormValidationErrors({ serverError: err.message || "Cannot connect. Try again." });
@@ -422,7 +424,7 @@ export default function SnapFeedMonolithicEngine() {
       const res = await fetch(`${API_BASE_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data.user) {
-        setProfileFormData({ fullName: data.user.fullName || '', username: data.user.username || '', dateOfBirth: data.user.dateOfBirth || '', bio: data.user.bio || '', email: data.user.email || '' });
+        setProfileFormData({ fullName: data.user.fullName || '', username: data.user.username || '', dateOfBirth: data.user.dateOfBirth || '', bio: data.user.bio || '', email: data.user.email || '', isVerified: data.user.isVerified || false });
         setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
       }
     } catch (err) {}
@@ -842,16 +844,29 @@ export default function SnapFeedMonolithicEngine() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[10px] text-slate-400 font-semibold">Email</label>
-                  <button type="button" onClick={() => setShowEmailChange(!showEmailChange)} className="text-[10px] text-blue-400 hover:underline">
-                    {showEmailChange ? 'Cancel' : 'Change Email'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={async () => { const token = localStorage.getItem('sf_token'); try { const res = await apiFetch(`${API_BASE_URL}/api/auth/resend-code`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: profileFormData.email }) }); if (res.ok) triggerNotification('Code sent to your email!'); } catch(e) { triggerNotification('Failed to send code'); } }} className="text-[10px] text-blue-400 hover:underline">Send Code</button>
+                    <button type="button" onClick={() => setShowEmailChange(!showEmailChange)} className="text-[10px] text-blue-400 hover:underline">
+                      {showEmailChange ? 'Cancel' : 'Change Email'}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <input type="text" value={profileFormData.email} readOnly className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-400 outline-none" />
-                  <span className={`text-[9px] px-2 py-1 rounded-full font-bold ${profileFormData.email ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {profileFormData.email ? 'Verified' : 'Unverified'}
+                  <span className={`text-[9px] px-2 py-1 rounded-full font-bold ${profileFormData.isVerified ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                    {profileFormData.isVerified ? 'Verified' : 'Unverified'}
                   </span>
                 </div>
+                {!profileFormData.isVerified && profileFormData.email && (
+                  <div className="mt-2 bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2">
+                    <p className="text-[10px] text-slate-500">Enter the 6-digit code sent to your email:</p>
+                    <div className="flex gap-2">
+                      <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} placeholder="123456" maxLength={6} className="flex-1 bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-white text-center tracking-[4px] font-mono placeholder-slate-600 outline-none transition" />
+                      <button type="button" onClick={executeEmailVerification} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-xl transition">Verify</button>
+                    </div>
+                    {formValidationErrors.code && <p className="text-red-400 text-[10px]">{formValidationErrors.code}</p>}
+                  </div>
+                )}
               </div>
 
               {showEmailChange && (
