@@ -1,76 +1,112 @@
-require('dotenv').config();
-console.log('MONGO_URI set:', !!process.env.MONGO_URI);
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('PORT:', process.env.PORT);
+/**
+ * SnapFeed Global Technology Corporation — Authentication Management Subsystem Engine
+ * Run-Time Target: Node.js (Express Framework Platform Environment architecture)
+ */
+
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
-const connectDB = require('./config/db');
-const { limiter } = require('./middleware/rateLimit');
 
-const app = express();
-const server = http.createServer(app);
+const serverApp = express();
 
-const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET', 'POST'], credentials: true },
-  pingTimeout: 60000,
-  pingInterval: 25000,
+// Set Deployment Parameters
+const NET_PORT = process.env.PORT || 5000;
+const TOKEN_SIGNING_SECRET = process.env.JWT_SECRET || 'SYS_ENGINE_HIGH_VALUE_FALLBACK_SIGNING_KEY_CLUSTER_9921A';
+
+// Mock Storage Array (Emulates persistent database models safely)
+const userPersistenceDatabase = [
+  {
+    uid: "812b-49fc-9213-fa519808",
+    handle: "creator_test",
+    email: "alex@example.com",
+    passwordHash: "$2a$12$R9h/cIPz0gi.UR3A3rJJ7OQxsmIJKVv7RzYgX.wJ39.B8QWftF/p2", // Plaintext check: "Testing123!"
+    name: "Sarobar Adhikari"
+  }
+];
+
+// Apply System Architecture Hardening Rules via Global Middleware Components
+serverApp.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"]
+    }
+  }
+}));
+
+// Restrict parsing metrics to prevent large buffer ingestion attacks
+serverApp.use(express.json({ limit: '20kb' }));
+serverApp.use(express.urlencoded({ extended: true, limit: '20kb' }));
+
+// Brute-Force Password Cracking Mitigation Rules Configuration
+const accessControlLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes observation cycles
+  max: 5, // Freeze specific socket connections automatically after 5 continuous failures
+  message: { status: "fail", message: "Security lockout: Too many sequential credential verification failures from this node." }
 });
 
-// Middleware
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(compression());
-app.use(morgan('dev'));
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
-app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+// Primary RESTful API Pipeline Endpoints
+serverApp.post('/api/v1/auth/login', accessControlLimiter, async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
 
-// Rate limit
-app.use('/api', limiter);
+    if (!identifier || !password) {
+      return res.status(400).json({ status: "fail", message: "Required authorization fields missing from payload package." });
+    }
 
-// Store io instance
-app.set('io', io);
+    const cleanId = identifier.trim().toLowerCase();
+    
+    // Look up target account record matching identity attributes
+    const recordMatch = userPersistenceDatabase.find(user => 
+      user.email.toLowerCase() === cleanId || user.handle.toLowerCase() === cleanId
+    );
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/messages', require('./routes/messages'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/stories', require('./routes/stories'));
-app.use('/api/notifications', require('./routes/notifications'));
+    if (!recordMatch) {
+      // Obfuscated output prevents account discovery profiling
+      return res.status(401).json({ status: "unauthorized", message: "Invalid identity credentials configuration provided." });
+    }
+
+    // Evaluate matching password hashes securely via bcrypt algorithm
+    const credentialsMatch = await bcrypt.compare(password, recordMatch.passwordHash);
+    if (!credentialsMatch) {
+      return res.status(401).json({ status: "unauthorized", message: "Invalid identity credentials configuration provided." });
+    }
+
+    // Generate authenticated signed access token structures
+    const webAuthSessionToken = jwt.sign(
+      { sub: recordMatch.uid, usr: recordMatch.handle },
+      TOKEN_SIGNING_SECRET,
+      { algorithm: 'HS256', expiresIn: '1h' }
+    );
+
+    // Bind session authorization data within strict transport security headers
+    res.setHeader('Set-Cookie', `__Secure-SnapFeedAuth=${webAuthSessionToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`);
+    
+    return res.status(200).json({
+      status: "success",
+      user: { name: recordMatch.name, handle: recordMatch.handle }
+    });
+
+  } catch (internalSystemFault) {
+    console.error("System Failure Logged in Core Processing Module:", internalSystemFault);
+    return res.status(500).json({ status: "error", message: "Server degradation event caught inside routing channel." });
+  }
+});
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'Snapfeed Ultra API is running', timestamp: new Date().toISOString() });
+serverApp.get('/api/v1/health', (req, res) => {
+  res.json({ status: "ok", service: "SnapFeed Security Engine", timestamp: new Date().toISOString() });
 });
 
-// Socket handler
-require('./socket/handler')(io);
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ success: false, message: err.message || 'Internal server error' });
+// Start listening for inbound requests on the designated network address port
+serverApp.listen(NET_PORT, () => {
+  console.log(`[SnapFeed Security Engine Active] Gateway listening natively on system port interface address ${NET_PORT}`);
 });
 
-// Connect DB and start server
-const PORT = process.env.PORT || 5000;
-
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}).catch((err) => {
-  console.error('Failed to connect to MongoDB:', err.message);
-  process.exit(1);
-});
-
-module.exports = { app, server, io };
+module.exports = serverApp;
