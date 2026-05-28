@@ -576,8 +576,8 @@ export default function SnapFeedMonolithicEngine() {
                 ))}
               </div>
             </div>
-          </div> {/* right sidebar end */}
-        </div> {/* sidebar+feed flex container end */}
+          </div>
+        </div>
       )}
 
       {/* Footer (only show in auth mode) */}
