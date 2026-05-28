@@ -501,7 +501,7 @@ export default function SnapFeedMonolithicEngine() {
                   </div>
                 </div>
                 <div className="flex-1 -mx-4 -mb-6">
-                  <SnapFeedMessenger />
+                  <SnapFeedMessenger users={simulatedOnlineUsersDirectory} activeUser={activeUserProfileRecord} />
                 </div>
               </div>
             ) : (

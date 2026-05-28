@@ -108,10 +108,10 @@ export default function SnapFeedUnifiedSidebar({ language = 'en', activeUserInit
     { id: 'user_profile_node', localizationKey: 'itemUserProfileName', assetGraphicIndicator: '👤', isAvatarCircle: true, renderingAccentColorHex: '#3b82f6' },
     { id: 'ai_assistant_node', localizationKey: 'itemEngineAssistantAI', assetGraphicIndicator: '✨', isAvatarCircle: false, renderingAccentColorHex: '#a855f7' },
     { id: 'network_connections_node', localizationKey: 'itemNetworkConnections', assetGraphicIndicator: '👥', isAvatarCircle: false, renderingAccentColorHex: '#06b6d4' },
+    { id: 'community_channels_node', localizationKey: 'itemChannelsGroups', assetGraphicIndicator: '💬', isAvatarCircle: false, renderingAccentColorHex: '#6366f1' },
     { id: 'performance_dashboard_node', localizationKey: 'itemAnalyticsDashboard', assetGraphicIndicator: '📊', isAvatarCircle: false, renderingAccentColorHex: '#10b981' },
     { id: 'historical_archive_node', localizationKey: 'itemHistoryArchive', assetGraphicIndicator: '🕒', isAvatarCircle: false, renderingAccentColorHex: '#f59e0b' },
     { id: 'bookmarked_media_node', localizationKey: 'itemSavedBookmarks', assetGraphicIndicator: '🔖', isAvatarCircle: false, renderingAccentColorHex: '#ec4899' },
-    { id: 'community_channels_node', localizationKey: 'itemChannelsGroups', assetGraphicIndicator: '💬', isAvatarCircle: false, renderingAccentColorHex: '#6366f1' },
     { id: 'video_stories_node', localizationKey: 'itemCreativeVideoReels', assetGraphicIndicator: '🎬', isAvatarCircle: false, renderingAccentColorHex: '#f43f5e' },
     { id: 'global_commerce_node', localizationKey: 'itemTradeMarketplace', assetGraphicIndicator: '🛍️', isAvatarCircle: false, renderingAccentColorHex: '#14b8a6' },
     { id: 'dynamic_feeds_node', localizationKey: 'itemPersonalizedFeeds', assetGraphicIndicator: '📰', isAvatarCircle: false, renderingAccentColorHex: '#84cc16' }
