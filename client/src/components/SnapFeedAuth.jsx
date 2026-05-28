@@ -6,50 +6,50 @@ import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 const BASE_INTERFACE_VOCABULARY = {
   en: {
     heroMainTitle: "Explore the things you love.",
-    heroSubTitle: "Join millions of users sharing instant stories, real-time feeds, and beautiful canvas spaces on SnapFeed.",
-    badgeLiveStream: "LIVE FEED CHANNEL",
-    cardStatusActiveSession: "Active profile session recognized",
-    btnProceedSession: "Continue Setup Process",
-    btnFallbackRoute: "Switch active profile gateway",
-    formHeadingSignIn: "Sign In Securely",
-    formSubHeadingSignIn: "Provide your authentic account tokens to continue access control routing setup.",
-    fieldLabelUserIdentity: "Email, Phone Number or Username",
-    fieldLabelAccountSecret: "Password Phrase Key",
+    heroSubTitle: "Share stories, photos, and connect with friends on SnapFeed.",
+    badgeLiveStream: "LIVE FEED",
+    cardStatusActiveSession: "Welcome back! Your session is active.",
+    btnProceedSession: "Continue to Feed",
+    btnFallbackRoute: "Use another account",
+    formHeadingSignIn: "Sign In",
+    formSubHeadingSignIn: "Enter your email and password to continue.",
+    fieldLabelUserIdentity: "Email or Username",
+    fieldLabelAccountSecret: "Password",
     btnActionDisplayString: "Show",
     btnActionHideString: "Hide",
-    btnActionExecuteAuth: "Authenticate & Open Feed Console",
+    btnActionExecuteAuth: "Log In",
     structuralTextSeparator: "or",
-    btnTriggerNewRegistrationFlow: "Create brand new account",
-    formHeadingRegister: "Create Account Workspace",
-    formSubHeadingRegister: "Register your personalized credentials inside our structural environment.",
+    btnTriggerNewRegistrationFlow: "Create new account",
+    formHeadingRegister: "Create Account",
+    formSubHeadingRegister: "Sign up to join SnapFeed.",
     fieldLabelUserFirstName: "First Name",
     fieldLabelUserLastName: "Last Name",
-    fieldLabelUserGender: "Gender Allocation Type",
-    fieldPlaceholderGenderSelect: "Select your identity gender profile",
-    fieldOptionGenderFemale: "Female User",
-    fieldOptionGenderMale: "Male User",
-    fieldOptionGenderNonBinary: "Non-Binary User",
-    fieldLabelUserContactChannels: "Mobile Number or Email Address",
-    fieldExplanatoryWarningText: "Verification tokens will be dispatched safely through these verified channels.",
-    fieldLabelUserNewPassword: "Create Secure Password",
-    regulatoryConsentLegalStatement: "By executing form submission triggers, you agree to follow the platform terms of services, internal server tracking policies, and consumer protection protocols.",
-    btnActionExecuteRegistration: "Execute Registration & Sync Database",
-    linkNavigateBackLoginPanel: "I already possess an active account profile",
-    brandFooterAttributionString: "Powered by SnapFeed Core Decentralized Engine Subsystem Layer",
-    newsFeedTabTitle: "Global Network News Feed",
-    postCreationInputPlaceholder: "What is on your mind today? Share updates...",
-    btnAttachImageLocalPath: "Add Image URL",
-    btnPublishPostToLedger: "Publish to Feed",
-    loadingPublishingActiveState: "Syncing Post Entry...",
-    emptyFeedFallbackNotification: "No data logs visible inside the feed matrix. Create the first record entry!",
-    actionMenuReportEntry: "Report Post to Safety Admins",
-    actionMenuHideEntry: "Hide Post from Local Memory Feed",
+    fieldLabelUserGender: "Gender",
+    fieldPlaceholderGenderSelect: "Select gender",
+    fieldOptionGenderFemale: "Female",
+    fieldOptionGenderMale: "Male",
+    fieldOptionGenderNonBinary: "Non-Binary",
+    fieldLabelUserContactChannels: "Mobile Number or Email",
+    fieldExplanatoryWarningText: "We will send a verification code to this contact.",
+    fieldLabelUserNewPassword: "Password",
+    regulatoryConsentLegalStatement: "By signing up, you agree to our Terms of Service and Privacy Policy.",
+    btnActionExecuteRegistration: "Sign Up",
+    linkNavigateBackLoginPanel: "I already have an account",
+    brandFooterAttributionString: "Powered by SnapFeed",
+    newsFeedTabTitle: "News Feed",
+    postCreationInputPlaceholder: "What's on your mind?",
+    btnAttachImageLocalPath: "Add Image Link",
+    btnPublishPostToLedger: "Post",
+    loadingPublishingActiveState: "Posting...",
+    emptyFeedFallbackNotification: "No posts yet. Be the first to share!",
+    actionMenuReportEntry: "Report",
+    actionMenuHideEntry: "Hide",
     feedEngagementLikeLabel: "Like",
     feedEngagementCommentLabel: "Comment",
-    feedEngagementShareLabel: "Share URL",
-    commentInputBoxPlaceholder: "Write a clean reply statement...",
-    btnSubmitCommentToPost: "Reply",
-    activeUsersOnlineSidebarTitle: "Active Verified Connections"
+    feedEngagementShareLabel: "Share",
+    commentInputBoxPlaceholder: "Write a comment...",
+    btnSubmitCommentToPost: "Send",
+    activeUsersOnlineSidebarTitle: "Online Friends"
   },
   ne: {
     heroMainTitle: "\u0906\u092b\u0942\u0932\u093e\u0908 \u092e\u0928\u092a\u0930\u094d\u0928\u0947 \u0915\u0941\u0930\u093e\u0939\u0930\u0942 \u0905\u0928\u094d\u0935\u0947\u0937\u0923 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
@@ -237,31 +237,31 @@ export default function SnapFeedMonolithicEngine() {
     setFormValidationErrors({});
     const identityTrimmed = inputLoginUserIdentity.trim();
     const passwordValue = inputLoginAccountSecret;
-    if (!identityTrimmed) { setFormValidationErrors({ loginId: "Identity entry cannot be left blank." }); return; }
-    if (passwordValue.length < 6) { setFormValidationErrors({ loginPassword: "Security passphrase layout constraint error." }); return; }
+    if (!identityTrimmed) { setFormValidationErrors({ loginId: "Please enter your email." }); return; }
+    if (passwordValue.length < 6) { setFormValidationErrors({ loginPassword: "Password must be at least 6 characters." }); return; }
     const matchedAccount = registeredAccounts.find(acc => acc.contact.toLowerCase() === identityTrimmed.toLowerCase() && acc.password === passwordValue);
     if (!matchedAccount) {
-      setFormValidationErrors({ serverError: "No matching account found. Check your credentials or create a new account." });
+      setFormValidationErrors({ serverError: "Account not found. Check your email or create a new account." });
       return;
     }
     setIsProcessingNetworkSubmission(true);
-    setLoadingStatusTextDisplay("Authenticating Network Token Gateways...");
+    setLoadingStatusTextDisplay("Logging in...");
     setTimeout(() => {
       setIsProcessingNetworkSubmission(false);
       setActiveUserProfileRecord({ fullName: matchedAccount.fullName, accountHandle: matchedAccount.handle, avatarInitialString: matchedAccount.firstName.charAt(0).toUpperCase() });
       setActiveWorkflowPanel('appNewsFeedDashboard');
-      triggerNotification("Security verification authorized! Opening main application feed.");
+      triggerNotification("Welcome to SnapFeed!");
     }, 1500);
   };
 
   const executeSecureAccountCreationPipeline = (e) => {
     e.preventDefault();
     setFormValidationErrors({});
-    if (!formRegistrationState.firstNameValue.trim() || !formRegistrationState.lastNameValue.trim()) { setFormValidationErrors({ name: "User surname and given identity metrics required." }); return; }
-    if (!formRegistrationState.contactChannelValue.includes('@')) { setFormValidationErrors({ contact: "Provide an authentic, reachable communication channel layout string." }); return; }
-    if (formRegistrationState.securePasswordValue.length < 8) { setFormValidationErrors({ password: "Security passphrase must scale past 8 validation string indexes." }); return; }
+    if (!formRegistrationState.firstNameValue.trim() || !formRegistrationState.lastNameValue.trim()) { setFormValidationErrors({ name: "Please enter your first and last name." }); return; }
+    if (!formRegistrationState.contactChannelValue.includes('@')) { setFormValidationErrors({ contact: "Please enter a valid email." }); return; }
+    if (formRegistrationState.securePasswordValue.length < 8) { setFormValidationErrors({ password: "Password must be at least 8 characters." }); return; }
     setIsProcessingNetworkSubmission(true);
-    setLoadingStatusTextDisplay("Registering Credential State Matrix...");
+    setLoadingStatusTextDisplay("Creating account...");
     const newAccount = {
       firstName: formRegistrationState.firstNameValue,
       lastName: formRegistrationState.lastNameValue,
@@ -271,13 +271,13 @@ export default function SnapFeedMonolithicEngine() {
       password: formRegistrationState.securePasswordValue
     };
     setTimeout(() => {
-      setLoadingStatusTextDisplay("Cryptographic Ledger Synced! Finalizing Account Deployment...");
+      setLoadingStatusTextDisplay("Almost done...");
       setTimeout(() => {
         setIsProcessingNetworkSubmission(false);
         setRegisteredAccounts(prev => [...prev, newAccount]);
         setActiveUserProfileRecord({ fullName: newAccount.fullName, accountHandle: newAccount.handle, avatarInitialString: newAccount.firstName.charAt(0).toUpperCase() });
         setActiveWorkflowPanel('appNewsFeedDashboard');
-        triggerNotification("Account completely synchronized across system node registries.");
+        triggerNotification("Account created successfully.");
       }, 1200);
     }, 1500);
   };
@@ -287,7 +287,7 @@ export default function SnapFeedMonolithicEngine() {
     if (!inputPostContentText.trim()) { triggerNotification("Post text body canvas cannot be deployed empty."); return; }
     setFeedPosts([{ id: `dynamic-post-id-${Date.now()}`, authorName: activeUserProfileRecord.fullName, authorHandle: activeUserProfileRecord.accountHandle, timestamp: Date.now(), contentBody: inputPostContentText, contentImage: inputPostAttachedImageUrl.trim() || null, likesCount: 0, isLikedByMe: false, comments: [] }, ...feedPosts]);
     setInputPostContentText(''); setInputPostAttachedImageUrl('');
-    triggerNotification("Post successfully published directly to live network feed ledger.");
+    triggerNotification("Post published!");
   };
 
   const handleCommentSubmissionPipeline = (targetPostId, commentTextValue) => {
@@ -319,7 +319,7 @@ export default function SnapFeedMonolithicEngine() {
                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-full h-full rounded-full border-4 border-slate-800 border-t-blue-500" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Processing Core Metrics</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Please Wait</p>
                 <p className="text-sm text-slate-300">{loadingStatusTextDisplay}</p>
               </div>
             </motion.div>
@@ -340,7 +340,7 @@ export default function SnapFeedMonolithicEngine() {
         <main className="relative z-10 max-w-7xl w-full mx-auto px-6 py-12 flex-1 flex flex-col lg:flex-row items-center justify-center gap-16">
           <section className="flex-1 space-y-8 select-none">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
-              <div className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-400 text-[10px] font-bold tracking-widest uppercase">Enterprise Application Infrastructure v2.4.0-Release</div>
+              <div className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-400 text-[10px] font-bold tracking-widest uppercase">SnapFeed v2.4</div>
               <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-none">{UI_VOCABULARY.heroMainTitle}</h1>
               <p className="text-base text-slate-400 max-w-lg leading-relaxed">{UI_VOCABULARY.heroSubTitle}</p>
             </motion.div>
@@ -374,7 +374,7 @@ export default function SnapFeedMonolithicEngine() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <button type="button" onClick={() => { setIsProcessingNetworkSubmission(true); setLoadingStatusTextDisplay("Re-establishing Authenticated App Session..."); setTimeout(() => { setIsProcessingNetworkSubmission(false); setActiveWorkflowPanel('appNewsFeedDashboard'); triggerNotification("Session restored cleanly."); }, 1200); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-blue-600/10">{UI_VOCABULARY.btnProceedSession}</button>
+                  <button type="button" onClick={() => { setIsProcessingNetworkSubmission(true); setLoadingStatusTextDisplay("Restoring session..."); setTimeout(() => { setIsProcessingNetworkSubmission(false); setActiveWorkflowPanel('appNewsFeedDashboard'); triggerNotification("Welcome back!"); }, 1200); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-blue-600/10">{UI_VOCABULARY.btnProceedSession}</button>
                   <button type="button" onClick={() => setActiveWorkflowPanel('credentialsLogin')} className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs border border-slate-800/80 transition">{UI_VOCABULARY.btnFallbackRoute}</button>
                 </div>
               </motion.div>
@@ -509,8 +509,8 @@ export default function SnapFeedMonolithicEngine() {
                       <button onClick={() => setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)} className="text-slate-500 hover:text-white text-lg">⋯</button>
                       {activeMenuPostId === post.id && (
                         <div className="absolute right-0 top-6 bg-slate-900 border border-slate-800 rounded-xl p-2 min-w-[160px] shadow-xl z-20">
-                          <button onClick={() => { triggerNotification("Report submitted."); setActiveMenuPostId(null); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuReportEntry}</button>
-                          <button onClick={() => { setFeedPosts(prev => prev.filter(p => p.id !== post.id)); setActiveMenuPostId(null); triggerNotification("Post hidden from local feed."); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuHideEntry}</button>
+                          <button onClick={() => { triggerNotification("Report sent."); setActiveMenuPostId(null); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuReportEntry}</button>
+                          <button onClick={() => { setFeedPosts(prev => prev.filter(p => p.id !== post.id)); setActiveMenuPostId(null); triggerNotification("Post hidden."); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuHideEntry}</button>
                         </div>
                       )}
                     </div>
@@ -527,7 +527,7 @@ export default function SnapFeedMonolithicEngine() {
                       <span>💬</span>
                       <span>{UI_VOCABULARY.feedEngagementCommentLabel} ({post.comments.length})</span>
                     </button>
-                    <button onClick={() => { navigator.clipboard?.writeText(window.location.href); triggerNotification("Feed entry URL copied."); }} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
+                    <button onClick={() => { navigator.clipboard?.writeText(window.location.href); triggerNotification("Link copied."); }} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
                       <span>↗️</span>
                       <span>{UI_VOCABULARY.feedEngagementShareLabel}</span>
                     </button>
