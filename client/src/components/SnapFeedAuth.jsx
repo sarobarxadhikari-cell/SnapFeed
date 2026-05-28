@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
 import SnapFeedReactionCSS from './SnapFeedReactionCSS';
 import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 import SnapFeedLiveMap from './SnapFeedLiveMap';
@@ -240,6 +241,25 @@ export default function SnapFeedMonolithicEngine() {
 
   const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
+  const decodeTokenUserId = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId;
+    } catch { return ''; }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('sf_token');
+    if (token) {
+      const userId = decodeTokenUserId(token);
+      setCurrentUserId(userId);
+      const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+      socket.emit('register_user', userId);
+      socketRef.current = socket;
+      return () => socket.disconnect();
+    }
+  }, []);
+
   const apiFetch = async (url, options = {}, timeoutMs = 60000) => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -282,6 +302,11 @@ export default function SnapFeedMonolithicEngine() {
         return;
       }
       localStorage.setItem('sf_token', data.token);
+      const userId = decodeTokenUserId(data.token);
+      setCurrentUserId(userId);
+      const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+      socket.emit('register_user', userId);
+      socketRef.current = socket;
       setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
       setIsProcessingNetworkSubmission(false);
       setActiveWorkflowPanel('appNewsFeedDashboard');
@@ -320,10 +345,15 @@ export default function SnapFeedMonolithicEngine() {
         setFormValidationErrors({ serverError: data.error });
         return;
       }
-      setIsProcessingNetworkSubmission(false);
       localStorage.setItem('sf_token', data.token);
+      const userId = decodeTokenUserId(data.token);
+      setCurrentUserId(userId);
+      const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+      socket.emit('register_user', userId);
+      socketRef.current = socket;
       setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
       setVerificationEmail(formRegistrationState.contactChannelValue);
+      setIsProcessingNetworkSubmission(false);
       setActiveWorkflowPanel('appNewsFeedDashboard');
       triggerNotification("Account created! Verify email later from profile.");
     } catch (err) {
@@ -411,6 +441,8 @@ export default function SnapFeedMonolithicEngine() {
 
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState('');
+  const socketRef = useRef(null);
   const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
   const [profileUpdateMsg, setProfileUpdateMsg] = useState('');
   const [showEmailChange, setShowEmailChange] = useState(false);
@@ -900,14 +932,14 @@ export default function SnapFeedMonolithicEngine() {
       {showSearchPanel && (
         <SnapFeedSearchProfile
           token={localStorage.getItem('sf_token')}
-          currentUserId={''}
+          currentUserId={currentUserId}
           onClose={() => setShowSearchPanel(false)}
           onViewProfile={(action) => {
-            if (action.action === 'send_friend_request' && window.io) {
-              window.io.emit('send_friend_request', { senderId: '', receiverId: action.receiverId });
+            if (action.action === 'send_friend_request' && socketRef.current) {
+              socketRef.current.emit('send_friend_request', { senderId: currentUserId, receiverId: action.receiverId });
             }
-            if (action.action === 'send_message' && window.io) {
-              window.io.emit('send_message', { senderId: '', receiverId: action.receiverId, text: action.text });
+            if (action.action === 'send_message' && socketRef.current) {
+              socketRef.current.emit('send_message', { senderId: currentUserId, receiverId: action.receiverId, text: action.text });
             }
           }}
         />
