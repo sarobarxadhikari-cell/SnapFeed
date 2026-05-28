@@ -135,7 +135,9 @@ const internalFlowCardMotionVariants = {
 export default function SnapFeedMonolithicEngine() {
   const [currentSystemLanguage, setCurrentSystemLanguage] = useState('en');
   const [activeWorkflowPanel, setActiveWorkflowPanel] = useState('credentialsLogin');
-  const [registeredAccounts, setRegisteredAccounts] = useState([]);
+  const [registeredAccounts, setRegisteredAccounts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sf_accounts') || '[]'); } catch { return []; }
+  });
   const [passwordFieldTextVisibilityState, setPasswordFieldTextVisibilityState] = useState(false);
   const [isProcessingNetworkSubmission, setIsProcessingNetworkSubmission] = useState(false);
   const [loadingStatusTextDisplay, setLoadingStatusTextDisplay] = useState('');
@@ -182,6 +184,10 @@ export default function SnapFeedMonolithicEngine() {
     { id: "usr-3", name: "Rabin Chettri", init: "RC", status: "Online" },
     { id: "usr-4", name: "Asmita Gurung", init: "AG", status: "Busy" }
   ]);
+
+  useEffect(() => {
+    if (registeredAccounts.length > 0) localStorage.setItem('sf_accounts', JSON.stringify(registeredAccounts));
+  }, [registeredAccounts]);
 
   const UI_VOCABULARY = BASE_INTERFACE_VOCABULARY[currentSystemLanguage] || BASE_INTERFACE_VOCABULARY['en'];
   const particleSystemCanvasReference = useRef(null);
@@ -232,7 +238,7 @@ export default function SnapFeedMonolithicEngine() {
     const passwordValue = inputLoginAccountSecret;
     if (!identityTrimmed) { setFormValidationErrors({ loginId: "Identity entry cannot be left blank." }); return; }
     if (passwordValue.length < 6) { setFormValidationErrors({ loginPassword: "Security passphrase layout constraint error." }); return; }
-    const matchedAccount = registeredAccounts.find(acc => acc.contact === identityTrimmed && acc.password === passwordValue);
+    const matchedAccount = registeredAccounts.find(acc => acc.contact.toLowerCase() === identityTrimmed.toLowerCase() && acc.password === passwordValue);
     if (!matchedAccount) {
       setFormValidationErrors({ serverError: "No matching account found. Check your credentials or create a new account." });
       return;
