@@ -1,6 +1,6 @@
 /**
- * SnapFeed Global Technology Corporation — Authentication Management Subsystem Engine
- * Run-Time Target: Node.js (Express Framework Platform Environment architecture)
+ * SnapFeed Engine Core Infrastructure Integration Gateway Subsystem Layer
+ * Operating Target Environment: Node.js Engine (Express Module Runtime Architecture Core)
  */
 
 const express = require('express');
@@ -8,27 +8,16 @@ const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 
-const serverApp = express();
+const applicationServerInstance = express();
+const INFRASTRUCTURE_SERVER_PORT = process.env.PORT || 5000;
+const CORE_SIGNING_PASSPHRASE_KEY = process.env.JWT_SECRET || 'PERSISTENT_ENGINE_FALLBACK_CLUSTER_KEY_992128A';
 
-// Set Deployment Parameters
-const NET_PORT = process.env.PORT || 5000;
-const TOKEN_SIGNING_SECRET = process.env.JWT_SECRET || 'SYS_ENGINE_HIGH_VALUE_FALLBACK_SIGNING_KEY_CLUSTER_9921A';
+// Production Isolated In-Memory Data Storage Ledger Matrix
+const centralizedActiveIdentityLedgerStore = [];
 
-// Mock Storage Array (Emulates persistent database models safely)
-const userPersistenceDatabase = [
-  {
-    uid: "812b-49fc-9213-fa519808",
-    handle: "creator_test",
-    email: "alex@example.com",
-    passwordHash: "$2a$12$R9h/cIPz0gi.UR3A3rJJ7OQxsmIJKVv7RzYgX.wJ39.B8QWftF/p2", // Plaintext check: "Testing123!"
-    name: "Sarobar Adhikari"
-  }
-];
-
-// Apply System Architecture Hardening Rules via Global Middleware Components
-serverApp.use(helmet({
+// Apply Strict HTTP Pipeline Configuration Security Controls
+applicationServerInstance.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -40,105 +29,71 @@ serverApp.use(helmet({
   }
 }));
 
-// Restrict parsing metrics to prevent large buffer ingestion attacks
-serverApp.use(express.json({ limit: '20kb' }));
-serverApp.use(express.urlencoded({ extended: true, limit: '20kb' }));
+// Strictly bound memory allocations parameters to mitigate payload overflow corruption risks
+applicationServerInstance.use(express.json({ limit: '25kb' }));
+applicationServerInstance.use(express.urlencoded({ extended: true, limit: '25kb' }));
 
-// Brute-Force Password Cracking Mitigation Rules Configuration
-const accessControlLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes observation cycles
-  max: 5, // Freeze specific socket connections automatically after 5 continuous failures
-  message: { status: "fail", message: "Security lockout: Too many sequential credential verification failures from this node." }
+// Anti Brute-Force Rate Limiting Strategy Settings Configuration Block
+const submissionNetworkRequestRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: { status: "error", message: "Security Warning: Excessive authentication requests dropped." }
 });
 
-// Primary RESTful API Pipeline Endpoints
-serverApp.post('/api/v1/auth/login', accessControlLimiter, async (req, res) => {
+// RESTful Active Pipeline Routes Ingestion Controllers
+applicationServerInstance.post('/api/v1/auth/register', submissionNetworkRequestRateLimiter, async (requestObject, responseObject) => {
   try {
-    const { identifier, password } = req.body;
+    const { firstname, surname, gender, contact, password } = requestObject.body;
 
-    if (!identifier || !password) {
-      return res.status(400).json({ status: "fail", message: "Required authorization fields missing from payload package." });
+    if (!firstname || !surname || !contact || !password) {
+      return responseObject.status(400).json({ status: "fail", message: "Incomplete details. All required parameters must be provided." });
     }
 
-    const cleanId = identifier.trim().toLowerCase();
-    
-    // Look up target account record matching identity attributes
-    const recordMatch = userPersistenceDatabase.find(user => 
-      user.email.toLowerCase() === cleanId || user.handle.toLowerCase() === cleanId
+    const normalizedUniqueContactIdentityString = contact.trim().toLowerCase();
+
+    const doesIdentityRecordPreexist = centralizedActiveIdentityLedgerStore.some(activeUserRecordNode =>
+      activeUserRecordNode.registeredUserContactMetadata === normalizedUniqueContactIdentityString
     );
 
-    if (!recordMatch) {
-      // Obfuscated output prevents account discovery profiling
-      return res.status(401).json({ status: "unauthorized", message: "Invalid identity credentials configuration provided." });
+    if (doesIdentityRecordPreexist) {
+      return responseObject.status(409).json({ status: "conflict", message: "An account with this email or phone number already exists." });
     }
 
-    // Evaluate matching password hashes securely via bcrypt algorithm
-    const credentialsMatch = await bcrypt.compare(password, recordMatch.passwordHash);
-    if (!credentialsMatch) {
-      return res.status(401).json({ status: "unauthorized", message: "Invalid identity credentials configuration provided." });
-    }
+    const cryptographicallyGeneratedPasswordHash = await bcrypt.hash(password, 12);
 
-    // Generate authenticated signed access token structures
-    const webAuthSessionToken = jwt.sign(
-      { sub: recordMatch.uid, usr: recordMatch.handle },
-      TOKEN_SIGNING_SECRET,
-      { algorithm: 'HS256', expiresIn: '1h' }
-    );
+    const instantiatedRegistrationRecordPayload = {
+      userUniqueSystemUuid: `sf-user-identity-node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      userFullLegalName: `${firstname} ${surname}`,
+      registeredUserGenderMetadata: gender || 'unspecified',
+      registeredUserContactMetadata: normalizedUniqueContactIdentityString,
+      secureEncryptedCredentialHash: cryptographicallyGeneratedPasswordHash,
+      systemIngestionRecordTimestamp: new Date().toISOString()
+    };
 
-    // Bind session authorization data within strict transport security headers
-    res.setHeader('Set-Cookie', `__Secure-SnapFeedAuth=${webAuthSessionToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`);
-    
-    return res.status(200).json({
+    centralizedActiveIdentityLedgerStore.push(instantiatedRegistrationRecordPayload);
+
+    console.log("========================================================================");
+    console.log("--> New User Registry Event Committed Securely to In-Memory Data Ledger Array Store:");
+    console.log(JSON.stringify(instantiatedRegistrationRecordPayload, null, 2));
+    console.log("========================================================================");
+
+    return responseObject.status(201).json({
       status: "success",
-      user: { name: recordMatch.name, handle: recordMatch.handle }
+      message: "Account created successfully. Identity details committed safely to network storage node memory."
     });
 
-  } catch (internalSystemFault) {
-    console.error("System Failure Logged in Core Processing Module:", internalSystemFault);
-    return res.status(500).json({ status: "error", message: "Server degradation event caught inside routing channel." });
+  } catch (criticalCorePipelineProcessingException) {
+    console.error("Critical Runtime Boundary Ingestion Processing Exception Encountered: ", criticalCorePipelineProcessingException);
+    return responseObject.status(500).json({ status: "error", message: "An internal server error occurred during asset mapping processes." });
   }
 });
 
-// Registration Route
-serverApp.post('/api/v1/auth/register', async (req, res) => {
-  try {
-    const { firstname, surname, contact, password, gender } = req.body;
-    if (!firstname || !surname || !contact || !password) {
-      return res.status(400).json({ status: "fail", message: "Required registration fields missing from payload package." });
-    }
-    const cleanContact = contact.trim().toLowerCase();
-    const exists = userPersistenceDatabase.find(u => u.email.toLowerCase() === cleanContact);
-    if (exists) {
-      return res.status(409).json({ status: "fail", message: "Identity endpoint already registered in system ledger." });
-    }
-    const passwordHash = await bcrypt.hash(password, 12);
-    const newUser = {
-      uid: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      handle: cleanContact.split('@')[0],
-      email: cleanContact,
-      passwordHash,
-      name: `${firstname} ${surname}`,
-      gender: gender || 'private',
-      createdAt: new Date().toISOString()
-    };
-    userPersistenceDatabase.push(newUser);
-    const token = jwt.sign({ sub: newUser.uid, usr: newUser.handle }, TOKEN_SIGNING_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
-    res.setHeader('Set-Cookie', `__Secure-SnapFeedAuth=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`);
-    return res.status(201).json({ status: "success", user: { name: newUser.name, handle: newUser.handle } });
-  } catch (err) {
-    console.error("Registration pipeline failure:", err);
-    return res.status(500).json({ status: "error", message: "Server degradation event caught inside registration pipeline." });
-  }
+// Fallback Route Interface Handlers Configuration Block Area
+applicationServerInstance.all('*', (requestObject, responseObject) => {
+  responseObject.status(404).json({ status: "fail", message: "Resource mapping address index location could not be located inside system bounds." });
 });
 
-// Health check
-serverApp.get('/api/v1/health', (req, res) => {
-  res.json({ status: "ok", service: "SnapFeed Security Engine", timestamp: new Date().toISOString() });
+// Start the core process framework engine listener loop
+applicationServerInstance.listen(INFRASTRUCTURE_SERVER_PORT, () => {
+  console.log(`[SnapFeed Security Server Engine] System Routing Pipeline Online at Interface Port Parameter Socket: ${INFRASTRUCTURE_SERVER_PORT}`);
 });
-
-// Start listening for inbound requests on the designated network address port
-serverApp.listen(NET_PORT, () => {
-  console.log(`[SnapFeed Security Engine Active] Gateway listening natively on system port interface address ${NET_PORT}`);
-});
-
-module.exports = serverApp;
