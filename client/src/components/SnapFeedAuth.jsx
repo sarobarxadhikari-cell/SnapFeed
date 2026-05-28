@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SnapFeedReactionCSS from './SnapFeedReactionCSS';
 import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
+import SnapFeedLiveMap from './SnapFeedLiveMap';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -179,6 +180,7 @@ export default function SnapFeedMonolithicEngine() {
     }
   ]);
 
+  const [feedView, setFeedView] = useState('feed');
   const [simulatedOnlineUsersDirectory] = useState([
     { id: "usr-1", name: "Suman Thapa", init: "ST", status: "Online" },
     { id: "usr-2", name: "Deepa Rai", init: "DR", status: "Active 5m ago" },
@@ -302,6 +304,11 @@ export default function SnapFeedMonolithicEngine() {
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
     return `${Math.floor(diff / 86400000)}d ago`;
+  };
+
+  const handleSidebarNavigate = (itemId, label) => {
+    if (itemId === 'network_connections_node') { setFeedView('map'); return; }
+    setFeedView('feed');
   };
 
   return (
@@ -468,9 +475,21 @@ export default function SnapFeedMonolithicEngine() {
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
         <div className="relative z-10 flex-1 flex">
-          <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} />
-          <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 space-y-6 overflow-y-auto">
-            {/* Top Bar */}
+          <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
+          <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 overflow-y-auto">
+            {feedView === 'map' ? (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-lg font-bold text-white">Active Connections</h1>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
+                    <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
+                  </div>
+                </div>
+                <SnapFeedLiveMap language={currentSystemLanguage} />
+              </div>
+            ) : (
+              <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-bold text-white">{UI_VOCABULARY.newsFeedTabTitle}</h1>
               <div className="flex items-center gap-3">
@@ -555,6 +574,8 @@ export default function SnapFeedMonolithicEngine() {
                 </div>
               </motion.div>
             ))}
+              </div>
+            )}
           </main>
 
           {/* Right Sidebar - Active Users */}
