@@ -555,7 +555,7 @@ export default function SnapFeedMonolithicEngine() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </main>
 
           {/* Right Sidebar - Active Users */}
           <div className="hidden lg:block w-64 shrink-0">
@@ -577,7 +577,6 @@ export default function SnapFeedMonolithicEngine() {
               </div>
             </div>
           </div> {/* right sidebar end */}
-        </main>
         </div> {/* sidebar+feed flex container end */}
       )}
 
