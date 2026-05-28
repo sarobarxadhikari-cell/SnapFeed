@@ -237,7 +237,7 @@ export default function SnapFeedMonolithicEngine() {
     setFormRegistrationState({ ...formRegistrationState, [e.target.name]: e.target.value });
   };
 
-  const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
   const executeIdentityAuthenticationFlow = async (e) => {
     e.preventDefault();
