@@ -942,6 +942,7 @@ export default function SnapFeedMonolithicEngine() {
           socket={socketRef.current}
           onClose={() => { setShowMessageBox(false); setMessageBoxOpenChat(null); }}
           openChatWith={messageBoxOpenChat}
+          onNewMessage={(text) => triggerNotification(text)}
         />
       )}
 

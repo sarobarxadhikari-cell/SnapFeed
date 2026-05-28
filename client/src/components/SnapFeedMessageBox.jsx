@@ -15,18 +15,28 @@ const playMessageSound = () => {
     osc1.type = 'sine';
     osc2.type = 'sine';
     osc1.frequency.setValueAtTime(880, ctx.currentTime);
-    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
-    osc1.frequency.setValueAtTime(1100, ctx.currentTime + 0.16);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.06);
+    osc1.frequency.setValueAtTime(1100, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
     osc1.start(ctx.currentTime);
-    osc2.start(ctx.currentTime + 0.08);
-    osc1.stop(ctx.currentTime + 0.3);
-    osc2.stop(ctx.currentTime + 0.35);
+    osc2.start(ctx.currentTime + 0.06);
+    osc1.stop(ctx.currentTime + 0.35);
+    osc2.stop(ctx.currentTime + 0.4);
+    const osc3 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc3.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(1760, ctx.currentTime + 0.12);
+    gain2.gain.setValueAtTime(0.4, ctx.currentTime + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    osc3.start(ctx.currentTime + 0.12);
+    osc3.stop(ctx.currentTime + 0.4);
   } catch {}
 };
 
-export default function SnapFeedMessageBox({ token, currentUserId, socket, onClose, openChatWith }) {
+export default function SnapFeedMessageBox({ token, currentUserId, socket, onClose, openChatWith, onNewMessage }) {
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
@@ -60,6 +70,11 @@ export default function SnapFeedMessageBox({ token, currentUserId, socket, onClo
         setChatMessages(prev => [...prev, msg]);
       }
       playMessageSound();
+      if (onNewMessage && (!activeChat || (msg.sender?._id !== activeChat._id && msg.sender !== activeChat._id))) {
+        const senderName = msg.sender?.fullName || 'Someone';
+        const senderText = msg.text?.length > 30 ? msg.text.substring(0, 30) + '...' : msg.text;
+        onNewMessage(`${senderName}: ${senderText}`);
+      }
       loadConversations();
     });
     socket.on('message_sent_confirm', (msg) => {
