@@ -10,6 +10,7 @@ import SnapFeedUnifiedHeader from './SnapFeedUnifiedHeader';
 import SnapFeedSearchProfile from './SnapFeedSearchProfile';
 import SnapFeedFriends from './SnapFeedFriends';
 import SnapFeedMessageBox from './SnapFeedMessageBox';
+import SnapFeedVideoCall from './SnapFeedVideoCall';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -284,6 +285,13 @@ export default function SnapFeedMonolithicEngine() {
           o3.start(ctx.currentTime + 0.12); o3.stop(ctx.currentTime + 0.4);
         } catch {}
       });
+
+      socket.on('call_offer', async ({ offer, from }) => {
+        const fromUser = await apiFetch(`${API_BASE_URL}/api/users/profile/${from}`);
+        if (fromUser.user) {
+          setActiveVideoCall({ targetUser: fromUser.user, isIncoming: true, offer });
+        }
+      });
       socketRef.current = socket;
       return () => { socket.off('receive_message'); socket.disconnect(); };
     }
@@ -473,6 +481,7 @@ export default function SnapFeedMonolithicEngine() {
   const [showFriendsPanel, setShowFriendsPanel] = useState(false);
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxOpenChat, setMessageBoxOpenChat] = useState(null);
+  const [activeVideoCall, setActiveVideoCall] = useState(null);
   const [currentUserId, setCurrentUserId] = useState('');
   const socketRef = useRef(null);
   const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
@@ -962,6 +971,17 @@ export default function SnapFeedMonolithicEngine() {
         </div>
       )}
 
+      {activeVideoCall && (
+        <SnapFeedVideoCall
+          socket={socketRef.current}
+          currentUserId={currentUserId}
+          targetUser={activeVideoCall.targetUser}
+          isIncoming={activeVideoCall.isIncoming}
+          offer={activeVideoCall.offer}
+          onEndCall={() => setActiveVideoCall(null)}
+        />
+      )}
+
       {showMessageBox && (
         <SnapFeedMessageBox
           token={localStorage.getItem('sf_token')}
@@ -970,6 +990,7 @@ export default function SnapFeedMonolithicEngine() {
           onClose={() => { setShowMessageBox(false); setMessageBoxOpenChat(null); }}
           openChatWith={messageBoxOpenChat}
           onNewMessage={(text) => triggerNotification(text)}
+          onStartVideoCall={(user) => setActiveVideoCall({ targetUser: user, isIncoming: false })}
         />
       )}
 

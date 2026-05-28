@@ -128,6 +128,22 @@ io.on('connection', (socket) => {
     io.to(receiverId).emit('user_stop_typing', { userId: senderId });
   });
 
+  socket.on('call_offer', ({ to, offer, from }) => {
+    io.to(to).emit('call_offer', { offer, from });
+  });
+
+  socket.on('call_answer', ({ to, answer }) => {
+    io.to(to).emit('call_answer', { answer });
+  });
+
+  socket.on('ice_candidate', ({ to, candidate }) => {
+    io.to(to).emit('ice_candidate', { candidate });
+  });
+
+  socket.on('call_end', ({ to }) => {
+    io.to(to).emit('call_end');
+  });
+
   socket.on('send_friend_request', async ({ senderId, receiverId }) => {
     try {
       const exists = await FriendRequest.findOne({ sender: senderId, receiver: receiverId });
