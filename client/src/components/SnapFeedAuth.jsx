@@ -134,7 +134,8 @@ const internalFlowCardMotionVariants = {
 
 export default function SnapFeedMonolithicEngine() {
   const [currentSystemLanguage, setCurrentSystemLanguage] = useState('en');
-  const [activeWorkflowPanel, setActiveWorkflowPanel] = useState('registrationForm');
+  const [activeWorkflowPanel, setActiveWorkflowPanel] = useState('credentialsLogin');
+  const [registeredAccounts, setRegisteredAccounts] = useState([]);
   const [passwordFieldTextVisibilityState, setPasswordFieldTextVisibilityState] = useState(false);
   const [isProcessingNetworkSubmission, setIsProcessingNetworkSubmission] = useState(false);
   const [loadingStatusTextDisplay, setLoadingStatusTextDisplay] = useState('');
@@ -227,11 +228,23 @@ export default function SnapFeedMonolithicEngine() {
   const executeIdentityAuthenticationFlow = (e) => {
     e.preventDefault();
     setFormValidationErrors({});
-    if (!inputLoginUserIdentity.trim()) { setFormValidationErrors({ loginId: "Identity entry cannot be left blank." }); return; }
-    if (inputLoginAccountSecret.length < 6) { setFormValidationErrors({ loginPassword: "Security passphrase layout constraint error." }); return; }
+    const identityTrimmed = inputLoginUserIdentity.trim();
+    const passwordValue = inputLoginAccountSecret;
+    if (!identityTrimmed) { setFormValidationErrors({ loginId: "Identity entry cannot be left blank." }); return; }
+    if (passwordValue.length < 6) { setFormValidationErrors({ loginPassword: "Security passphrase layout constraint error." }); return; }
+    const matchedAccount = registeredAccounts.find(acc => acc.contact === identityTrimmed && acc.password === passwordValue);
+    if (!matchedAccount) {
+      setFormValidationErrors({ serverError: "No matching account found. Check your credentials or create a new account." });
+      return;
+    }
     setIsProcessingNetworkSubmission(true);
     setLoadingStatusTextDisplay("Authenticating Network Token Gateways...");
-    setTimeout(() => { setIsProcessingNetworkSubmission(false); setActiveWorkflowPanel('appNewsFeedDashboard'); triggerNotification("Security verification authorized! Opening main application feed."); }, 1500);
+    setTimeout(() => {
+      setIsProcessingNetworkSubmission(false);
+      setActiveUserProfileRecord({ fullName: matchedAccount.fullName, accountHandle: matchedAccount.handle, avatarInitialString: matchedAccount.firstName.charAt(0).toUpperCase() });
+      setActiveWorkflowPanel('appNewsFeedDashboard');
+      triggerNotification("Security verification authorized! Opening main application feed.");
+    }, 1500);
   };
 
   const executeSecureAccountCreationPipeline = (e) => {
@@ -242,11 +255,20 @@ export default function SnapFeedMonolithicEngine() {
     if (formRegistrationState.securePasswordValue.length < 8) { setFormValidationErrors({ password: "Security passphrase must scale past 8 validation string indexes." }); return; }
     setIsProcessingNetworkSubmission(true);
     setLoadingStatusTextDisplay("Registering Credential State Matrix...");
+    const newAccount = {
+      firstName: formRegistrationState.firstNameValue,
+      lastName: formRegistrationState.lastNameValue,
+      fullName: `${formRegistrationState.firstNameValue} ${formRegistrationState.lastNameValue}`,
+      handle: `${formRegistrationState.firstNameValue.toLowerCase()}_creator`,
+      contact: formRegistrationState.contactChannelValue,
+      password: formRegistrationState.securePasswordValue
+    };
     setTimeout(() => {
       setLoadingStatusTextDisplay("Cryptographic Ledger Synced! Finalizing Account Deployment...");
       setTimeout(() => {
         setIsProcessingNetworkSubmission(false);
-        setActiveUserProfileRecord({ fullName: `${formRegistrationState.firstNameValue} ${formRegistrationState.lastNameValue}`, accountHandle: `${formRegistrationState.firstNameValue.toLowerCase()}_creator`, avatarInitialString: formRegistrationState.firstNameValue.charAt(0).toUpperCase() });
+        setRegisteredAccounts(prev => [...prev, newAccount]);
+        setActiveUserProfileRecord({ fullName: newAccount.fullName, accountHandle: newAccount.handle, avatarInitialString: newAccount.firstName.charAt(0).toUpperCase() });
         setActiveWorkflowPanel('appNewsFeedDashboard');
         triggerNotification("Account completely synchronized across system node registries.");
       }, 1200);
@@ -371,7 +393,9 @@ export default function SnapFeedMonolithicEngine() {
                     </div>
                     {formValidationErrors.loginPassword && <p className="text-red-400 text-[10px]">{formValidationErrors.loginPassword}</p>}
                   </div>
+                  {formValidationErrors.serverError && <p className="text-red-400 text-xs bg-red-500/10 rounded-lg px-3 py-2">{formValidationErrors.serverError}</p>}
                   <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition">{UI_VOCABULARY.btnActionExecuteAuth}</button>
+                  <button type="button" onClick={() => { setFormValidationErrors({}); setActiveWorkflowPanel('registrationForm'); }} className="w-full text-center text-[10px] font-semibold text-blue-400 hover:underline pt-1">Don't have an account? Create one</button>
                 </form>
               </motion.div>
             )}
@@ -444,7 +468,7 @@ export default function SnapFeedMonolithicEngine() {
               <h1 className="text-lg font-bold text-white">{UI_VOCABULARY.newsFeedTabTitle}</h1>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{activeUserProfileRecord.avatarInitialString}</div>
-                <button onClick={() => setActiveWorkflowPanel('profileSelect')} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
+                <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
               </div>
             </div>
 
