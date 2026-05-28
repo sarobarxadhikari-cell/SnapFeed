@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SnapFeedReactionCSS from './SnapFeedReactionCSS';
 import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 import SnapFeedLiveMap from './SnapFeedLiveMap';
+import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -497,6 +498,8 @@ export default function SnapFeedMonolithicEngine() {
                 <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
               </div>
             </div>
+
+            <SnapFeedStoriesComposer />
 
             {/* Create Post Card */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 space-y-3">
