@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
-export default function SnapFeedSearchProfile({ token, currentUserId, onViewProfile, onClose }) {
+export default function SnapFeedSearchProfile({ token, currentUserId, onViewProfile, onClose, onMessageUser }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
@@ -49,7 +49,8 @@ export default function SnapFeedSearchProfile({ token, currentUserId, onViewProf
     try {
       const data = await apiFetch(`${API_BASE_URL}/api/users/profile/${userId}`);
       if (data.user) { setProfileData(data); setSelectedProfile(userId); }
-    } catch {}
+      else { console.log('Profile error:', data); }
+    } catch (e) { console.log('Profile fetch error:', e); }
     setLoading(false);
   };
 
@@ -120,7 +121,7 @@ export default function SnapFeedSearchProfile({ token, currentUserId, onViewProf
                 {privacy?.isFriend ? (
                   <div className="flex-1 flex gap-2">
                     <div className="flex-1 bg-emerald-500/20 text-emerald-400 text-center py-2.5 rounded-xl text-xs font-bold border border-emerald-500/20">✓ Friends</div>
-                    <button onClick={() => setMessageText('')} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition">Message</button>
+                    <button onClick={() => { if (onMessageUser) onMessageUser(user._id); onClose(); }} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition">Message</button>
                   </div>
                 ) : privacy?.requestStatus === 'sent' ? (
                   <div className="flex-1 bg-slate-800 text-slate-400 text-center py-2.5 rounded-xl text-xs font-bold">Request Sent</div>

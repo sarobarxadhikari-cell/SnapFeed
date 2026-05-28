@@ -9,6 +9,7 @@ import SnapFeedMessenger from './SnapFeedMessenger';
 import SnapFeedUnifiedHeader from './SnapFeedUnifiedHeader';
 import SnapFeedSearchProfile from './SnapFeedSearchProfile';
 import SnapFeedFriends from './SnapFeedFriends';
+import SnapFeedMessageBox from './SnapFeedMessageBox';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -443,6 +444,8 @@ export default function SnapFeedMonolithicEngine() {
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showFriendsPanel, setShowFriendsPanel] = useState(false);
+  const [showMessageBox, setShowMessageBox] = useState(false);
+  const [messageBoxOpenChat, setMessageBoxOpenChat] = useState(null);
   const [currentUserId, setCurrentUserId] = useState('');
   const socketRef = useRef(null);
   const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
@@ -725,7 +728,7 @@ export default function SnapFeedMonolithicEngine() {
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
         <div className="relative z-10 flex flex-col flex-1">
-          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} onSearchClick={() => setShowSearchPanel(true)} onFriendsClick={() => setShowFriendsPanel(true)} />
+          <SnapFeedUnifiedHeader onChatClick={() => setShowMessageBox(true)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} onSearchClick={() => setShowSearchPanel(true)} onFriendsClick={() => setShowFriendsPanel(true)} />
           <div className="flex flex-1">
           <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
           <main className="flex-1 max-w-[700px] w-full mx-auto px-4 pt-2 pb-6 overflow-y-auto">
@@ -932,6 +935,16 @@ export default function SnapFeedMonolithicEngine() {
         </div>
       )}
 
+      {showMessageBox && (
+        <SnapFeedMessageBox
+          token={localStorage.getItem('sf_token')}
+          currentUserId={currentUserId}
+          socket={socketRef.current}
+          onClose={() => { setShowMessageBox(false); setMessageBoxOpenChat(null); }}
+          openChatWith={messageBoxOpenChat}
+        />
+      )}
+
       {showFriendsPanel && (
         <SnapFeedFriends
           token={localStorage.getItem('sf_token')}
@@ -945,6 +958,7 @@ export default function SnapFeedMonolithicEngine() {
           token={localStorage.getItem('sf_token')}
           currentUserId={currentUserId}
           onClose={() => setShowSearchPanel(false)}
+          onMessageUser={(userId) => { setMessageBoxOpenChat(userId); setShowMessageBox(true); setShowSearchPanel(false); }}
           onViewProfile={(action) => {
             if (action.action === 'send_friend_request' && socketRef.current) {
               socketRef.current.emit('send_friend_request', { senderId: currentUserId, receiverId: action.receiverId });
