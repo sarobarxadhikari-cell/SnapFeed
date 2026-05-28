@@ -5,7 +5,7 @@ import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 import SnapFeedLiveMap from './SnapFeedLiveMap';
 import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
 import SnapFeedMessenger from './SnapFeedMessenger';
-import SnapFeedActionIcons from './SnapFeedActionIcons';
+import SnapFeedUnifiedHeader from './SnapFeedUnifiedHeader';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -158,8 +158,6 @@ export default function SnapFeedMonolithicEngine() {
     fullName: "Sarobar Adhikari", accountHandle: "sarobar_creator", avatarInitialString: "SA"
   });
   const [formValidationErrors, setFormValidationErrors] = useState({});
-  const [inputPostContentText, setInputPostContentText] = useState('');
-  const [inputPostAttachedImageUrl, setInputPostAttachedImageUrl] = useState('');
   const [activeCommentInput, setActiveCommentInput] = useState({});
 
   const [feedPosts, setFeedPosts] = useState([
@@ -184,6 +182,8 @@ export default function SnapFeedMonolithicEngine() {
   ]);
 
   const [feedView, setFeedView] = useState('feed');
+  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [simulatedOnlineUsersDirectory] = useState([
     { id: "usr-1", name: "Suman Thapa", init: "ST", status: "Online" },
     { id: "usr-2", name: "Deepa Rai", init: "DR", status: "Active 5m ago" },
@@ -287,14 +287,6 @@ export default function SnapFeedMonolithicEngine() {
     }, 1500);
   };
 
-  const executeSubmitNewPostEntryToFeed = (e) => {
-    e.preventDefault();
-    if (!inputPostContentText.trim()) { triggerNotification("Post text body canvas cannot be deployed empty."); return; }
-    setFeedPosts([{ id: `dynamic-post-id-${Date.now()}`, authorName: activeUserProfileRecord.fullName, authorHandle: activeUserProfileRecord.accountHandle, timestamp: Date.now(), contentBody: inputPostContentText, contentImage: inputPostAttachedImageUrl.trim() || null, likesCount: 0, isLikedByMe: false, comments: [] }, ...feedPosts]);
-    setInputPostContentText(''); setInputPostAttachedImageUrl('');
-    triggerNotification("Post published!");
-  };
-
   const handleCommentSubmissionPipeline = (targetPostId, commentTextValue) => {
     if (!commentTextValue || !commentTextValue.trim()) return;
     setFeedPosts(prev => prev.map(p => p.id === targetPostId ? { ...p, comments: [...p.comments, { id: `comment-node-id-${Date.now()}`, authorName: activeUserProfileRecord.fullName, timestamp: Date.now(), text: commentTextValue.trim() }] } : p));
@@ -312,6 +304,13 @@ export default function SnapFeedMonolithicEngine() {
   const handleSidebarNavigate = (itemId, label) => {
     if (itemId === 'network_connections_node') { setFeedView('map'); return; }
     setFeedView('feed');
+  };
+
+  const handleLogout = () => {
+    setInputLoginUserIdentity('');
+    setInputLoginAccountSecret('');
+    setActiveWorkflowPanel('credentialsLogin');
+    setProfileMenuOpen(false);
   };
 
   return (
@@ -477,39 +476,22 @@ export default function SnapFeedMonolithicEngine() {
         </main>
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
-        <div className="relative z-10 flex-1 flex">
+        <div className="relative z-10 flex flex-col flex-1">
+          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => setProfileMenuOpen(!profileMenuOpen)} />
+          <div className="flex flex-1">
           <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
-          <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 overflow-y-auto">
+          <main className="flex-1 max-w-[700px] w-full mx-auto px-4 pt-2 pb-6 overflow-y-auto">
             {feedView === 'map' ? (
               <div>
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <h1 className="text-lg font-bold text-white">Active Connections</h1>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
-                    <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
-                  </div>
+                  <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
                 </div>
                 <SnapFeedLiveMap language={currentSystemLanguage} />
               </div>
             ) : (
               <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-lg font-bold text-white">{UI_VOCABULARY.newsFeedTabTitle}</h1>
-              <SnapFeedActionIcons />
-            </div>
-
             <SnapFeedStoriesComposer />
-
-            {/* Create Post Card */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 space-y-3">
-              <form onSubmit={executeSubmitNewPostEntryToFeed} className="space-y-3">
-                <textarea value={inputPostContentText} onChange={(e) => setInputPostContentText(e.target.value)} rows={2} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition resize-none placeholder-slate-600" placeholder={UI_VOCABULARY.postCreationInputPlaceholder} />
-                <input type="text" value={inputPostAttachedImageUrl} onChange={(e) => setInputPostAttachedImageUrl(e.target.value)} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-xs text-white outline-none transition placeholder-slate-600" placeholder={UI_VOCABULARY.btnAttachImageLocalPath} />
-                <div className="flex justify-end">
-                  <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition">{UI_VOCABULARY.btnPublishPostToLedger}</button>
-                </div>
-              </form>
-            </motion.div>
 
             {/* Feed Posts */}
             {feedPosts.length === 0 && (
@@ -578,15 +560,33 @@ export default function SnapFeedMonolithicEngine() {
             ))}
               </div>
             )}
+
+            {/* System Log Terminal Footer */}
+            <div className="bg-slate-900/50 border border-slate-800/40 rounded-3xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">COMPOSER EVENT STREAM LOGS</h3>
+                <span className="text-[9px] text-slate-700 font-mono">CACHE: {(Array.from({length:220},(_,i)=>i).reduce((a,b)=>a+Math.floor(Math.random()*6400)+2000,0)/1024).toFixed(2)} KB</span>
+              </div>
+              <div className="bg-slate-950 rounded-2xl p-3 space-y-1 max-h-28 overflow-y-auto font-mono" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e293b #0f172a' }}>
+                {Array.from({ length: 6 }, (_, i) => (
+                  <p key={i} className="text-[9px] text-slate-600 leading-relaxed">[{i + 1}] [CORE COMPILER] Synced Feed Data Node sf_feed_stream_cluster_{55000 + i}. Execution latency: {(Math.random() * 9.5 + 0.4).toFixed(2)}ms</p>
+                ))}
+              </div>
+            </div>
           </main>
 
-          {/* Right Sidebar - Messenger */}
+          {/* Right Sidebar - Messenger Toggle */}
           <div className="hidden lg:block w-[380px] shrink-0">
             <div className="sticky top-6">
-              <SnapFeedMessenger users={simulatedOnlineUsersDirectory} activeUser={activeUserProfileRecord} />
+              {isMessengerOpen && (
+                <div className="transition-all duration-300">
+                  <SnapFeedMessenger users={simulatedOnlineUsersDirectory} activeUser={activeUserProfileRecord} />
+                </div>
+              )}
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Footer (only show in auth mode) */}

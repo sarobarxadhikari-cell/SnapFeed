@@ -126,24 +126,8 @@ export default function SnapFeedUnifiedSidebar({ language = 'en', activeUserInit
     : filteredSearchSidebarItemsCollection.slice(0, 5);
 
   return (
-    <aside className="w-[320px] bg-slate-900 border-r border-slate-800/80 flex flex-col justify-between relative shadow-2xl overflow-hidden" aria-label="SnapFeed Core Vertical Navigation Menu">
-      <div className="flex-1 flex flex-col pt-4 px-3 overflow-y-auto space-y-4">
-        <div className="flex items-center justify-between px-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black text-lg tracking-tighter shadow-md shadow-blue-600/10">SF</div>
-            <div className="space-y-0.5">
-              <h2 className="text-xs font-black text-white tracking-widest uppercase">SnapFeed</h2>
-              <span className="text-[9px] text-slate-500 font-mono tracking-wider block">SIDEBAR_NODE_v2.6</span>
-            </div>
-          </div>
-        </div>
-        <div className="relative px-1">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-600 pointer-events-none">🔍</span>
-          <input type="text" value={liveSearchQueryString} onChange={(e) => setLiveSearchQueryString(e.target.value)} placeholder={dict.searchNetworkInputPlaceholder} className="w-full bg-slate-950 border border-slate-800/80 focus:border-blue-500 rounded-xl pl-9 pr-8 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition duration-150" />
-          {liveSearchQueryString && (
-            <button onClick={() => setLiveSearchQueryString('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-200 text-xs font-bold">✕</button>
-          )}
-        </div>
+    <aside className="w-[320px] bg-slate-900 border-r border-slate-800/80 flex flex-col relative shadow-2xl overflow-hidden" aria-label="SnapFeed Core Vertical Navigation Menu">
+      <div className="flex-1 flex flex-col px-3 overflow-y-auto space-y-1 pt-4">
         <motion.nav variants={sidebarListStaggerVariants} initial="hidden" animate="visible" className="space-y-0.5 px-1">
           {finalVisibleNavigationItemsList.map((item) => {
             const isItemCurrentlyActive = activeSelectedRouterLink === item.id;
@@ -162,7 +146,7 @@ export default function SnapFeedUnifiedSidebar({ language = 'en', activeUserInit
                     {item.assetGraphicIndicator}
                   </div>
                 )}
-                <span className={`text-xs font-semibold tracking-wide transition-colors ${isItemCurrentlyActive ? 'text-blue-400 font-bold' : 'text-slate-300 group-hover:text-white'}`}>
+                <span className={`text-xs font-semibold tracking-wide transition-colors truncate flex-1 text-left ${isItemCurrentlyActive ? 'text-blue-400 font-bold' : 'text-slate-300 group-hover:text-white'}`}>
                   {dict[item.localizationKey]}
                 </span>
                 {isItemCurrentlyActive && (
