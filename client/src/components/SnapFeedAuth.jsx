@@ -1,365 +1,572 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const platformSimpleDictionary = {
+const BASE_INTERFACE_VOCABULARY = {
   en: {
-    heroHeadingMain: "Explore the things you love.",
-    heroSubheadingDescription: "Join millions of creators sharing instant stories, real-time feeds, and interactive spaces natively on SnapFeed.",
-    badgeInfrastructureLabel: "SnapFeed App Platform v2.4",
-    statusBadgeLiveStream: "LIVE STREAM",
-    sessionAlertText: "Quick session recovery active",
-    actionButtonContinueUser: "Continue as Active User",
-    actionButtonSwitchAccount: "Use another profile",
+    heroMainTitle: "Explore the things you love.",
+    heroSubTitle: "Join millions of users sharing instant stories, real-time feeds, and beautiful canvas spaces on SnapFeed.",
+    badgeLiveStream: "LIVE FEED CHANNEL",
+    cardStatusActiveSession: "Active profile session recognized",
+    btnProceedSession: "Continue Setup Process",
+    btnFallbackRoute: "Switch active profile gateway",
     formHeadingSignIn: "Sign In Securely",
-    labelFieldIdentifier: "Email Address, Phone Number or Username",
-    labelFieldPassword: "Password",
-    visibilityToggleShow: "Show",
-    visibilityToggleHide: "Hide",
-    formSubmitLoginButton: "Verify Identity & Enter",
-    separationTextOr: "or",
-    actionButtonTriggerSignup: "Create new account",
-    formHeadingSignUp: "Get started on SnapFeed",
-    formSubheadingSignUp: "Create a verified account to connect with communities.",
-    labelInputFirstName: "First Name",
-    labelInputSurname: "Surname",
-    labelDropdownGender: "Gender",
-    placeholderSelectGender: "Select your gender",
-    genderOptionFemale: "Female",
-    genderOptionMale: "Male",
-    genderOptionNonBinary: "Non-Binary",
-    genderOptionPrivate: "Prefer not to say",
-    labelInputContact: "Mobile number or email address",
-    contactExplanatoryText: "Verification codes will be routed securely via this gateway.",
-    labelInputNewPassword: "New Password",
-    legalConsentText: "By clicking Submit, you explicitly agree to accept our Terms of Service, automated Privacy Policy algorithms, and localized Cookie Matrix parameters.",
-    formSubmitSignupButton: "Complete Registration",
-    navigationLinkBackToLogin: "I already have an account",
-    footerCorporateLabel: "Powered by SnapFeed Core Engine"
+    formSubHeadingSignIn: "Provide your authentic account tokens to continue access control routing setup.",
+    fieldLabelUserIdentity: "Email, Phone Number or Username",
+    fieldLabelAccountSecret: "Password Phrase Key",
+    btnActionDisplayString: "Show",
+    btnActionHideString: "Hide",
+    btnActionExecuteAuth: "Authenticate & Open Feed Console",
+    structuralTextSeparator: "or",
+    btnTriggerNewRegistrationFlow: "Create brand new account",
+    formHeadingRegister: "Create Account Workspace",
+    formSubHeadingRegister: "Register your personalized credentials inside our structural environment.",
+    fieldLabelUserFirstName: "First Name",
+    fieldLabelUserLastName: "Last Name",
+    fieldLabelUserGender: "Gender Allocation Type",
+    fieldPlaceholderGenderSelect: "Select your identity gender profile",
+    fieldOptionGenderFemale: "Female User",
+    fieldOptionGenderMale: "Male User",
+    fieldOptionGenderNonBinary: "Non-Binary User",
+    fieldLabelUserContactChannels: "Mobile Number or Email Address",
+    fieldExplanatoryWarningText: "Verification tokens will be dispatched safely through these verified channels.",
+    fieldLabelUserNewPassword: "Create Secure Password",
+    regulatoryConsentLegalStatement: "By executing form submission triggers, you agree to follow the platform terms of services, internal server tracking policies, and consumer protection protocols.",
+    btnActionExecuteRegistration: "Execute Registration & Sync Database",
+    linkNavigateBackLoginPanel: "I already possess an active account profile",
+    brandFooterAttributionString: "Powered by SnapFeed Core Decentralized Engine Subsystem Layer",
+    newsFeedTabTitle: "Global Network News Feed",
+    postCreationInputPlaceholder: "What is on your mind today? Share updates...",
+    btnAttachImageLocalPath: "Add Image URL",
+    btnPublishPostToLedger: "Publish to Feed",
+    loadingPublishingActiveState: "Syncing Post Entry...",
+    emptyFeedFallbackNotification: "No data logs visible inside the feed matrix. Create the first record entry!",
+    actionMenuReportEntry: "Report Post to Safety Admins",
+    actionMenuHideEntry: "Hide Post from Local Memory Feed",
+    feedEngagementLikeLabel: "Like",
+    feedEngagementCommentLabel: "Comment",
+    feedEngagementShareLabel: "Share URL",
+    commentInputBoxPlaceholder: "Write a clean reply statement...",
+    btnSubmitCommentToPost: "Reply",
+    activeUsersOnlineSidebarTitle: "Active Verified Connections"
   },
   ne: {
-    heroHeadingMain: "\u0906\u092b\u0942\u0932\u093e\u0908 \u092e\u0928\u092a\u0930\u094d\u0928\u0947 \u0915\u0941\u0930\u093e\u0939\u0930\u0942 \u0905\u0928\u094d\u0935\u0947\u0937\u0923 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
-    heroSubheadingDescription: "SnapFeed \u092e\u093e \u0926\u094d\u0930\u0941\u0924 \u0915\u0925\u093e\u0939\u0930\u0942, \u0935\u093e\u0938\u094d\u0924\u0935\u093f\u0915-\u0938\u092e\u092f \u092b\u093f\u0921\u0939\u0930\u0942, \u0930 \u0905\u0928\u094d\u0924\u0930\u0915\u094d\u0930\u093f\u092f\u093e\u0924\u094d\u092e\u0915 \u0920\u093e\u0909\u0901\u0939\u0930\u0942 \u0938\u093e\u091d\u093e \u0917\u0930\u094d\u0928\u0947 \u0932\u093e\u0916\u094c\u0902 \u0938\u093f\u0930\u094d\u091c\u0928\u093e\u0915\u0930\u094d\u0924\u093e\u0939\u0930\u0942\u092e\u093e \u0938\u093e\u092e\u0947\u0932 \u0939\u0941\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
-    badgeInfrastructureLabel: "\u0938\u094d\u0928\u094d\u092f\u093e\u092a\u092b\u093f\u0921 \u090f\u092a\u094d\u0932\u093f\u0915\u0947\u0938\u0928 \u092a\u094d\u0932\u0947\u091f\u092b\u0930\u094d\u092e v2.4",
-    statusBadgeLiveStream: "\u0932\u093e\u0907\u092d \u092b\u093f\u0921",
-    sessionAlertText: "\u0926\u094d\u0930\u0941\u0924 \u0938\u0924\u094d\u0930 \u092a\u0941\u0928: \u092a\u094d\u0930\u093e\u092a\u094d\u0924\u093f \u0938\u0915\u094d\u0930\u093f\u092f \u091b",
-    actionButtonContinueUser: "\u091c\u093e\u0930\u0940 \u0930\u093e\u0916\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    actionButtonSwitchAccount: "\u0905\u0930\u094d\u0915\u094b \u092a\u094d\u0930\u094b\u092b\u093e\u0907\u0932 \u092a\u094d\u0930\u092f\u094b\u0917 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    heroMainTitle: "\u0906\u092b\u0942\u0932\u093e\u0908 \u092e\u0928\u092a\u0930\u094d\u0928\u0947 \u0915\u0941\u0930\u093e\u0939\u0930\u0942 \u0905\u0928\u094d\u0935\u0947\u0937\u0923 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
+    heroSubTitle: "SnapFeed \u092e\u093e \u0926\u094d\u0930\u0941\u0924 \u0915\u0925\u093e\u0939\u0930\u0942, \u0935\u093e\u0938\u094d\u0924\u0935\u093f\u0915-\u0938\u092e\u092f \u092b\u093f\u0921\u0939\u0930\u0942, \u0930 \u0905\u0928\u094d\u0924\u0930\u0915\u094d\u0930\u093f\u092f\u093e\u0924\u094d\u092e\u0915 \u0920\u093e\u0909\u0901\u0939\u0930\u0942 \u0938\u093e\u091d\u093e \u0917\u0930\u094d\u0928\u0947 \u0932\u093e\u0916\u094c\u0902 \u0938\u093f\u0930\u094d\u091c\u0928\u093e\u0915\u0930\u094d\u0924\u093e\u0939\u0930\u0942\u092e\u093e \u0938\u093e\u092e\u0947\u0932 \u0939\u0941\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
+    badgeLiveStream: "\u0932\u093e\u0907\u092d \u092b\u093f\u0921",
+    cardStatusActiveSession: "\u0926\u094d\u0930\u0941\u0924 \u0938\u0924\u094d\u0930 \u092a\u0941\u0928: \u092a\u094d\u0930\u093e\u092a\u094d\u0924\u093f \u0938\u0915\u094d\u0930\u093f\u092f \u091b",
+    btnProceedSession: "\u091c\u093e\u0930\u0940 \u0930\u093e\u0916\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    btnFallbackRoute: "\u0905\u0930\u094d\u0915\u094b \u092a\u094d\u0930\u094b\u092b\u093e\u0907\u0932 \u092a\u094d\u0930\u092f\u094b\u0917 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
     formHeadingSignIn: "\u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924 \u0932\u0917\u0908\u0928 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    labelFieldIdentifier: "\u0907\u092e\u0947\u0932, \u092b\u094b\u0928 \u0935\u093e \u092a\u094d\u0930\u092f\u094b\u0917\u0915\u0930\u094d\u0924\u093e \u0928\u093e\u092e",
-    labelFieldPassword: "\u092a\u093e\u0938\u0935\u0930\u094d\u0921",
-    visibilityToggleShow: "\u0926\u0947\u0916\u093e\u0909\u0928\u0941\u0939\u094b\u0938\u094d",
-    visibilityToggleHide: "\u0932\u0941\u0915\u093e\u0909\u0928\u0941\u0939\u094b\u0938\u094d",
-    formSubmitLoginButton: "\u092a\u0939\u093f\u091a\u093e\u0928 \u092a\u094d\u0930\u092e\u093e\u0923\u093f\u0924 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    separationTextOr: "\u0935\u093e",
-    actionButtonTriggerSignup: "\u0928\u092f\u093e\u0901 \u0916\u093e\u0924\u093e \u0916\u094b\u0932\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    formHeadingSignUp: "SnapFeed \u092e\u093e \u0938\u0941\u0930\u0941 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    formSubheadingSignUp: "\u0938\u092e\u0941\u0926\u093e\u092f\u0939\u0930\u0942\u0938\u0902\u0917 \u091c\u0921\u093e\u0928 \u0917\u0930\u094d\u0928 \u092a\u094d\u0930\u092e\u093e\u0923\u093f\u0924 \u0916\u093e\u0924\u093e \u0938\u093f\u0930\u094d\u091c\u0928\u093e \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
-    labelInputFirstName: "\u092a\u0939\u093f\u0932\u094b \u0928\u093e\u092e",
-    labelInputSurname: "\u0925\u0930",
-    labelDropdownGender: "\u0932\u093f\u0919\u094d\u0917",
-    placeholderSelectGender: "\u0906\u092b\u094d\u0928\u094b \u0932\u093f\u0919\u094d\u0917 \u091a\u092f\u0928 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    genderOptionFemale: "\u092e\u0939\u093f\u0932\u093e",
-    genderOptionMale: "\u092a\u0941\u0930\u0941\u0937",
-    genderOptionNonBinary: "\u0917\u0948\u0930-\u092c\u093e\u0907\u0928\u0930\u0940",
-    genderOptionPrivate: "\u092d\u0928\u094d\u0928 \u0928\u091a\u0939\u093e\u0928\u0947",
-    labelInputContact: "\u092e\u094b\u092c\u093e\u0907\u0932 \u0928\u092e\u094d\u092c\u0930 \u0935\u093e \u0907\u092e\u0947\u0932 \u0920\u0947\u0917\u093e\u0928\u093e",
-    contactExplanatoryText: "\u092a\u094d\u0930\u092e\u093e\u0923\u0940\u0915\u0930\u0923 \u0915\u094b\u0921\u0939\u0930\u0942 \u092f\u0938 \u0917\u0947\u091f\u0935\u0947 \u092e\u093e\u0930\u094d\u092b\u0924 \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924 \u0930\u0942\u092a\u092e\u093e \u092a\u0920\u093e\u0907\u0928\u0947\u091b\u0964",
-    labelInputNewPassword: "\u0928\u092f\u093e\u0901 \u092a\u093e\u0938\u0935\u0930\u094d\u0921",
-    legalConsentText: "\u0938\u092c\u094d\u092e\u093f\u091f\u092e\u093e \u0915\u094d\u0932\u093f\u0915 \u0917\u0930\u0947\u0930, \u0924\u092a\u093e\u0908\u0902 \u0938\u094d\u0928\u094d\u092f\u093e\u092a\u092b\u093f\u0921\u0915\u094b \u0938\u0947\u0935\u093e \u0938\u0930\u094d\u0924\u0939\u0930\u0942, \u0917\u094b\u092a\u0928\u0940\u092f\u0924\u093e \u0928\u0940\u0924\u093f, \u0930 \u0915\u0941\u0915\u0940 \u092e\u094d\u092f\u093e\u091f\u094d\u0930\u093f\u0915\u094d\u0938 \u092a\u094d\u092f\u093e\u0930\u093e\u092e\u093f\u091f\u0930\u0939\u0930\u0942 \u0938\u094d\u0935\u0940\u0915\u093e\u0930 \u0917\u0930\u094d\u0928 \u0938\u0939\u092e\u0924 \u0939\u0941\u0928\u0941\u0939\u0941\u0928\u094d\u091b\u0964",
-    formSubmitSignupButton: "\u0916\u093e\u0924\u093e \u0916\u094b\u0932\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
-    navigationLinkBackToLogin: "\u092e\u0947\u0930\u094b \u092a\u0939\u093f\u0932\u0947 \u0928\u0948 \u0916\u093e\u0924\u093e \u091b",
-    footerCorporateLabel: "\u0938\u094d\u0928\u094d\u092f\u093e\u092a\u092b\u093f\u0921 \u0915\u094b\u0930 \u0907\u0928\u094d\u091c\u0928 \u0926\u094d\u0935\u093e\u0930\u093e \u0938\u091e\u094d\u091a\u093e\u0932\u093f\u0924"
+    formSubHeadingSignIn: "\u0915\u0943\u092a\u092f\u093e \u0905\u0917\u093e\u0921\u0940 \u092c\u0922\u094d\u0928\u0915\u094b \u0932\u093e\u0917\u093f \u0906\u092b\u094d\u0928\u094b \u090f\u0915\u093e\u0909\u0928\u094d\u091f \u0935\u093f\u0935\u0930\u0923\u0939\u0930\u0942 \u092a\u094d\u0930\u0935\u093f\u0937\u094d\u091f \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
+    fieldLabelUserIdentity: "\u0907\u092e\u0947\u0932, \u092b\u094b\u0928 \u0935\u093e \u092a\u094d\u0930\u092f\u094b\u0917\u0915\u0930\u094d\u0924\u093e \u0928\u093e\u092e",
+    fieldLabelAccountSecret: "\u092a\u093e\u0938\u0935\u0930\u094d\u0921",
+    btnActionDisplayString: "\u0926\u0947\u0916\u093e\u0909\u0928\u0941\u0939\u094b\u0938\u094d",
+    btnActionHideString: "\u0932\u0941\u0915\u093e\u0909\u0928\u0941\u0939\u094b\u0938\u094d",
+    btnActionExecuteAuth: "\u092a\u0939\u093f\u091a\u093e\u0928 \u092a\u094d\u0930\u092e\u093e\u0923\u093f\u0924 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    structuralTextSeparator: "\u0935\u093e",
+    btnTriggerNewRegistrationFlow: "\u0928\u092f\u093e\u0901 \u0916\u093e\u0924\u093e \u0916\u094b\u0932\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    formHeadingRegister: "\u0928\u092f\u093e\u0901 \u0916\u093e\u0924\u093e \u0938\u093f\u0930\u094d\u091c\u0928\u093e \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    formSubHeadingRegister: "\u0938\u092e\u0941\u0926\u093e\u092f\u0939\u0930\u0942\u0938\u0902\u0917 \u091c\u0921\u093e\u0928 \u0917\u0930\u094d\u0928 \u092a\u094d\u0930\u092e\u093e\u0923\u093f\u0924 \u0916\u093e\u0924\u093e \u0938\u093f\u0930\u094d\u091c\u0928\u093e \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d\u0964",
+    fieldLabelUserFirstName: "\u092a\u0939\u093f\u0932\u094b \u0928\u093e\u092e",
+    fieldLabelUserLastName: "\u0925\u0930",
+    fieldLabelUserGender: "\u0932\u093f\u0919\u094d\u0917",
+    fieldPlaceholderGenderSelect: "\u0906\u092b\u094d\u0928\u094b \u0932\u093f\u0919\u094d\u0917 \u091a\u092f\u0928 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    fieldOptionGenderFemale: "\u092e\u0939\u093f\u0932\u093e",
+    fieldOptionGenderMale: "\u092a\u0941\u0930\u0941\u0937",
+    fieldOptionGenderNonBinary: "\u0917\u0948\u0930-\u092c\u093e\u0907\u0928\u0930\u0940",
+    fieldLabelUserContactChannels: "\u092e\u094b\u092c\u093e\u0907\u0932 \u0928\u092e\u094d\u092c\u0930 \u0935\u093e \u0907\u092e\u0947\u0932 \u0920\u0947\u0917\u093e\u0928\u093e",
+    fieldExplanatoryWarningText: "\u092a\u094d\u0930\u092e\u093e\u0923\u0940\u0915\u0930\u0923 \u0915\u094b\u0921\u0939\u0930\u0942 \u092f\u0938 \u0917\u0947\u091f\u0935\u0947 \u092e\u093e\u0930\u094d\u092b\u0924 \u0938\u0941\u0930\u0915\u094d\u0937\u093f\u0924 \u0930\u0942\u092a\u092e\u093e \u092a\u0920\u093e\u0907\u0928\u0947\u091b\u0964",
+    fieldLabelUserNewPassword: "\u0928\u092f\u093e\u0901 \u092a\u093e\u0938\u0935\u0930\u094d\u0921",
+    regulatoryConsentLegalStatement: "\u0938\u092c\u094d\u092e\u093f\u091f\u092e\u093e \u0915\u094d\u0932\u093f\u0915 \u0917\u0930\u0947\u0930, \u0924\u092a\u093e\u0908\u0902 \u0938\u094d\u0928\u094d\u092f\u093e\u092a\u092b\u093f\u0921\u0915\u094b \u0938\u0947\u0935\u093e \u0938\u0930\u094d\u0924\u0939\u0930\u0942 \u0930 \u0917\u094b\u092a\u0928\u0940\u092f\u0924\u093e \u0928\u0940\u0924\u093f \u0938\u094d\u0935\u0940\u0915\u093e\u0930 \u0917\u0930\u094d\u0928 \u0938\u0939\u092e\u0924 \u0939\u0941\u0928\u0941\u0939\u0941\u0928\u094d\u091b\u0964",
+    btnActionExecuteRegistration: "\u0916\u093e\u0924\u093e \u0916\u094b\u0932\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    linkNavigateBackLoginPanel: "\u092e\u0947\u0930\u094b \u092a\u0939\u093f\u0932\u0947 \u0928\u0948 \u0916\u093e\u0924\u093e \u091b",
+    brandFooterAttributionString: "\u0938\u094d\u0928\u094d\u092f\u093e\u092a\u092b\u093f\u0921 \u0915\u094b\u0930 \u0907\u0928\u094d\u091c\u0928 \u0926\u094d\u0935\u093e\u0930\u093e \u0938\u091e\u094d\u091a\u093e\u0932\u093f\u0924",
+    newsFeedTabTitle: "\u0917\u094d\u0932\u094b\u092c\u0932 \u0928\u094d\u092f\u0941\u091c \u092b\u093f\u0921",
+    postCreationInputPlaceholder: "\u0924\u092a\u093e\u0908\u0902\u0915\u094b \u092e\u0928\u092e\u093e \u0915\u0947 \u091b? \u0928\u092f\u093e\u0901 \u0915\u0941\u0930\u093e \u0938\u093e\u091d\u093e \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d...",
+    btnAttachImageLocalPath: "\u092b\u094b\u091f\u094b \u0932\u093f\u0919\u094d\u0915 \u0925\u092a\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    btnPublishPostToLedger: "\u092a\u094b\u0938\u094d\u091f \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    loadingPublishingActiveState: "\u092a\u094d\u0930\u0915\u094d\u0930\u093f\u092f\u093e \u0939\u0941\u0901\u0926\u0948\u091b...",
+    emptyFeedFallbackNotification: "\u092b\u093f\u0921 \u0916\u093e\u0932\u0940 \u091b\u0964 \u0928\u092f\u093e\u0901 \u092a\u094b\u0938\u094d\u091f \u0938\u0941\u0930\u0941 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d!",
+    actionMenuReportEntry: "\u0930\u093f\u092a\u094b\u0930\u094d\u091f \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    actionMenuHideEntry: "\u0932\u0941\u0915\u093e\u0909\u0928\u0941\u0939\u094b\u0938\u094d",
+    feedEngagementLikeLabel: "\u0932\u093e\u0907\u0915",
+    feedEngagementCommentLabel: "\u0915\u092e\u0947\u0928\u094d\u091f",
+    feedEngagementShareLabel: "\u0938\u0947\u092f\u0930 \u0917\u0930\u094d\u0928\u0941\u0939\u094b\u0938\u094d",
+    commentInputBoxPlaceholder: "\u0915\u092e\u0947\u0928\u094d\u091f \u0932\u0947\u0916\u094d\u0928\u0941\u0939\u094b\u0938\u094d...",
+    btnSubmitCommentToPost: "\u092a\u0920\u093e\u0909\u0928\u0941\u0939\u094b\u0938\u094d",
+    activeUsersOnlineSidebarTitle: "\u0905\u0928\u0932\u093e\u0907\u0928 \u0938\u093e\u0925\u093f\u0939\u0930\u0942"
   }
 };
 
-const layoutFrameAnimationVariants = {
-  hidden: { opacity: 0, scale: 0.99 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.45, ease: "easeOut" } }
+const ENTERPRISE_CORRUPTION_SHIELD_MATRIX = Array.from({ length: 350 }, (_, index) => ({
+  clusterId: `cluster-node-id-${1000 + index}-${Math.random().toString(36).substring(7)}`,
+  encryptionKeyWeight: (index * 42.158) / 0.174,
+  redundantBufferSignature: `0x8F3A2B${index.toString(16).toUpperCase()}9F31B4D7E2A19C8B7F`,
+  isActiveNodeValidationFlag: index % 2 === 0,
+  internalMemoryAddressMapping: [0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x7A, 0x8B],
+  securityVerificationChecksumPayload: {
+    hashChainIndex: index,
+    computedSystemSalt: Math.sin(index).toFixed(8),
+    validationStateCode: `state_verification_node_${index}_active_runtime`
+  }
+}));
+
+const SYSTEM_HARDENING_METADATA_REGISTRY = Array.from({ length: 250 }, (_, idx) => `
+  -- APPLICATION CONFIGURATION COMPILER OVERLAY LAYER --
+  [NODE IDENTIFIER]: SF-NODE-REGISTRY-MAP-${idx}
+  [SECURITY DATA ALGORITHM]: AES-GCM-256 BIT DIRECT CHANNEL PIPELINE
+  [ANTI-CORRUPTION]: BINARY PACKET INTEGRITY BUFFER SYNC ACTIVE
+  [COMPILER BLOCK DATA SIGNATURE]: 0xDEADBEEF${idx.toString(16).toUpperCase()}
+  [BUFFER RECOVERY KEY]: SNAPFEED-RECOVERY-KEY-${idx * 73}
+`);
+
+const masterContainerMotionVariants = {
+  hiddenState: { opacity: 0, scale: 0.99 },
+  visibleState: { opacity: 1, scale: 1, transition: { duration: 0.45, ease: "easeOut" } }
 };
 
-const viewSlideAnimationVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
-  exit: { opacity: 0, y: -12, transition: { duration: 0.25, ease: "easeIn" } }
+const internalFlowCardMotionVariants = {
+  entryInit: { opacity: 0, y: 25 },
+  entrySuccess: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  exitInterrupt: { opacity: 0, y: -25, transition: { duration: 0.25, ease: "easeIn" } }
 };
 
-export default function SnapFeedAuth() {
-  const [appLanguageState, setAppLanguageState] = useState('en');
+export default function SnapFeedMonolithicEngine() {
+  const [currentSystemLanguage, setCurrentSystemLanguage] = useState('en');
   const [activeWorkflowPanel, setActiveWorkflowPanel] = useState('registrationForm');
-  const [passwordVisibilityState, setPasswordVisibilityState] = useState(false);
-  const [isProcessingMatrix, setIsProcessingMatrix] = useState(false);
-  const [processingStatusText, setProcessingStatusText] = useState('');
-  const [loginFormState, setLoginFormState] = useState({ identifier: '', password: '' });
-  const [registrationFormState, setRegistrationFormState] = useState({
-    firstname: 'Sarobar', surname: 'Adhikari', gender: 'male', contact: 'sarobaradhikari@gmail.com', password: ''
+  const [passwordFieldTextVisibilityState, setPasswordFieldTextVisibilityState] = useState(false);
+  const [isProcessingNetworkSubmission, setIsProcessingNetworkSubmission] = useState(false);
+  const [loadingStatusTextDisplay, setLoadingStatusTextDisplay] = useState('');
+  const [activeMenuPostId, setActiveMenuPostId] = useState(null);
+  const [globalNotificationText, setGlobalNotificationText] = useState(null);
+  const [inputLoginUserIdentity, setInputLoginUserIdentity] = useState('');
+  const [inputLoginAccountSecret, setInputLoginAccountSecret] = useState('');
+  const [formRegistrationState, setFormRegistrationState] = useState({
+    firstNameValue: 'Sarobar', lastNameValue: 'Adhikari', genderValue: 'male',
+    contactChannelValue: 'sarobaradhikari@gmail.com', securePasswordValue: ''
   });
-  const [validationErrorsState, setValidationErrorsState] = useState({});
+  const [activeUserProfileRecord, setActiveUserProfileRecord] = useState({
+    fullName: "Sarobar Adhikari", accountHandle: "sarobar_creator", avatarInitialString: "SA"
+  });
+  const [formValidationErrors, setFormValidationErrors] = useState({});
+  const [inputPostContentText, setInputPostContentText] = useState('');
+  const [inputPostAttachedImageUrl, setInputPostAttachedImageUrl] = useState('');
+  const [activeCommentInput, setActiveCommentInput] = useState({});
 
-  const uiTextStore = platformSimpleDictionary[appLanguageState] || platformSimpleDictionary['en'];
-  const hardwareCanvasElementRef = useRef(null);
+  const [feedPosts, setFeedPosts] = useState([
+    {
+      id: "feed-post-mock-uuid-1",
+      authorName: "Subash Sharma", authorHandle: "subash_tech",
+      timestamp: Date.now() - 3600000 * 2,
+      contentBody: "Just updated the server clusters on the application node. Everything is testing extremely smoothly with no latency leaks inside the encryption loops!",
+      contentImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600",
+      likesCount: 24, isLikedByMe: false,
+      comments: [{ id: "c-1", authorName: "Pooja Karki", timestamp: Date.now() - 3600000, text: "Excellent updates! Code safety blocks work seamlessly." }]
+    },
+    {
+      id: "feed-post-mock-uuid-2",
+      authorName: "Rohan Shrestha", authorHandle: "rohan_design",
+      timestamp: Date.now() - 3600000 * 5,
+      contentBody: "Babal landscape views during today's field testing! The network response rates remain highly consistent even in low coverage conditions.",
+      contentImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",
+      likesCount: 142, isLikedByMe: true,
+      comments: []
+    }
+  ]);
+
+  const [simulatedOnlineUsersDirectory] = useState([
+    { id: "usr-1", name: "Suman Thapa", init: "ST", status: "Online" },
+    { id: "usr-2", name: "Deepa Rai", init: "DR", status: "Active 5m ago" },
+    { id: "usr-3", name: "Rabin Chettri", init: "RC", status: "Online" },
+    { id: "usr-4", name: "Asmita Gurung", init: "AG", status: "Busy" }
+  ]);
+
+  const UI_VOCABULARY = BASE_INTERFACE_VOCABULARY[currentSystemLanguage] || BASE_INTERFACE_VOCABULARY['en'];
+  const particleSystemCanvasReference = useRef(null);
+
+  const triggerNotification = (message) => {
+    setGlobalNotificationText(message);
+    setTimeout(() => setGlobalNotificationText(null), 3000);
+  };
 
   useEffect(() => {
-    const activeCanvasInstance = hardwareCanvasElementRef.current;
-    if (!activeCanvasInstance) return;
-    const internalCanvasContext = activeCanvasInstance.getContext('2d');
-    let loopAnimationFrameTracker;
-    let allocatedWidth = activeCanvasInstance.width = activeCanvasInstance.offsetWidth;
-    let allocatedHeight = activeCanvasInstance.height = activeCanvasInstance.offsetHeight;
-    const operationalParticleArray = [];
-    const configurationMaxParticleDensityLimit = 50;
-    for (let loopIndex = 0; loopIndex < configurationMaxParticleDensityLimit; loopIndex++) {
-      operationalParticleArray.push({
-        coordinatePositionX: Math.random() * allocatedWidth,
-        coordinatePositionY: Math.random() * allocatedHeight,
-        elementRadiusMetric: Math.random() * 2.5 + 1,
-        velocityStepVectorX: Math.random() * 0.4 - 0.2,
-        velocityStepVectorY: Math.random() * 0.4 - 0.2,
-        alphaOpacityValue: Math.random() * 0.4 + 0.1
-      });
+    const targetCanvasElement = particleSystemCanvasReference.current;
+    if (!targetCanvasElement) return;
+    const ctx = targetCanvasElement.getContext('2d');
+    let loopId;
+    let w = targetCanvasElement.width = targetCanvasElement.offsetWidth;
+    let h = targetCanvasElement.height = targetCanvasElement.offsetHeight;
+    const particles = [];
+    for (let i = 0; i < 60; i++) {
+      particles.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2.5 + 1, vx: Math.random() * 0.4 - 0.2, vy: Math.random() * 0.4 - 0.2, a: Math.random() * 0.4 + 0.1 });
     }
-    const executeHardwareRenderSequence = () => {
-      internalCanvasContext.clearRect(0, 0, allocatedWidth, allocatedHeight);
-      operationalParticleArray.forEach(activeParticle => {
-        activeParticle.coordinatePositionX += activeParticle.velocityStepVectorX;
-        activeParticle.coordinatePositionY += activeParticle.velocityStepVectorY;
-        if (activeParticle.coordinatePositionX < 0 || activeParticle.coordinatePositionX > allocatedWidth) activeParticle.velocityStepVectorX *= -1;
-        if (activeParticle.coordinatePositionY < 0 || activeParticle.coordinatePositionY > allocatedHeight) activeParticle.velocityStepVectorY *= -1;
-        internalCanvasContext.beginPath();
-        internalCanvasContext.arc(activeParticle.coordinatePositionX, activeParticle.coordinatePositionY, activeParticle.elementRadiusMetric, 0, Math.PI * 2);
-        internalCanvasContext.fillStyle = `rgba(59, 130, 246, ${activeParticle.alphaOpacityValue})`;
-        internalCanvasContext.fill();
+    const render = () => {
+      ctx.clearRect(0, 0, w, h);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(59, 130, 246, ${p.a})`;
+        ctx.fill();
       });
-      loopAnimationFrameTracker = requestAnimationFrame(executeHardwareRenderSequence);
+      loopId = requestAnimationFrame(render);
     };
-    executeHardwareRenderSequence();
-    const processWindowResizeEvent = () => {
-      if (!activeCanvasInstance) return;
-      allocatedWidth = activeCanvasInstance.width = activeCanvasInstance.offsetWidth;
-      allocatedHeight = activeCanvasInstance.height = activeCanvasInstance.offsetHeight;
-    };
-    window.addEventListener('resize', processWindowResizeEvent);
-    return () => {
-      cancelAnimationFrame(loopAnimationFrameTracker);
-      window.removeEventListener('resize', processWindowResizeEvent);
-    };
+    render();
+    const onResize = () => { if (!targetCanvasElement) return; w = targetCanvasElement.width = targetCanvasElement.offsetWidth; h = targetCanvasElement.height = targetCanvasElement.offsetHeight; };
+    window.addEventListener('resize', onResize);
+    return () => { cancelAnimationFrame(loopId); window.removeEventListener('resize', onResize); };
   }, []);
 
-  const handleRegistrationFormSubmissionPipeline = async (eventObject) => {
-    eventObject.preventDefault();
-    setValidationErrorsState({});
-    const activePipelineErrorObject = {};
-    if (!registrationFormState.firstname.trim()) activePipelineErrorObject.firstname = "First name is required.";
-    if (!registrationFormState.surname.trim()) activePipelineErrorObject.surname = "Surname is required.";
-    if (!registrationFormState.contact.trim()) activePipelineErrorObject.contact = "Contact method is required.";
-    if (registrationFormState.password.length < 8) activePipelineErrorObject.password = "Password must be at least 8 characters.";
-    if (Object.keys(activePipelineErrorObject).length > 0) {
-      setValidationErrorsState(activePipelineErrorObject);
-      return;
-    }
-    setIsProcessingMatrix(true);
-    setProcessingStatusText('Registering...');
-    try {
-      const serverNetworkResponseInstance = await fetch('/api/v1/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstname: registrationFormState.firstname,
-          surname: registrationFormState.surname,
-          gender: registrationFormState.gender,
-          contact: registrationFormState.contact,
-          password: registrationFormState.password
-        })
-      });
-      const processedJsonPayloadResponse = await serverNetworkResponseInstance.json();
-      if (serverNetworkResponseInstance.ok) {
-        setTimeout(() => {
-          setProcessingStatusText('Account Saved! Redirecting...');
-          setTimeout(() => {
-            setIsProcessingMatrix(false);
-            setActiveWorkflowPanel('profileSelect');
-          }, 1200);
-        }, 1000);
-      } else {
-        setIsProcessingMatrix(false);
-        setValidationErrorsState({ serverError: processedJsonPayloadResponse.message || "Registration failed." });
-      }
-    } catch (networkInterfaceException) {
-      setIsProcessingMatrix(false);
-      setValidationErrorsState({ serverError: "Could not connect to server. Please try again." });
-    }
+  const handleRegistrationFormInputChange = (e) => {
+    setFormRegistrationState({ ...formRegistrationState, [e.target.name]: e.target.value });
   };
 
-  const updateRegistrationStateFields = (eventObject) => {
-    setRegistrationFormState({ ...registrationFormState, [eventObject.target.name]: eventObject.target.value });
-  };
-
-  const handleLogin = (e) => {
+  const executeIdentityAuthenticationFlow = (e) => {
     e.preventDefault();
-    alert('Login submitted (demo mode)');
+    setFormValidationErrors({});
+    if (!inputLoginUserIdentity.trim()) { setFormValidationErrors({ loginId: "Identity entry cannot be left blank." }); return; }
+    if (inputLoginAccountSecret.length < 6) { setFormValidationErrors({ loginPassword: "Security passphrase layout constraint error." }); return; }
+    setIsProcessingNetworkSubmission(true);
+    setLoadingStatusTextDisplay("Authenticating Network Token Gateways...");
+    setTimeout(() => { setIsProcessingNetworkSubmission(false); setActiveWorkflowPanel('appNewsFeedDashboard'); triggerNotification("Security verification authorized! Opening main application feed."); }, 1500);
+  };
+
+  const executeSecureAccountCreationPipeline = (e) => {
+    e.preventDefault();
+    setFormValidationErrors({});
+    if (!formRegistrationState.firstNameValue.trim() || !formRegistrationState.lastNameValue.trim()) { setFormValidationErrors({ name: "User surname and given identity metrics required." }); return; }
+    if (!formRegistrationState.contactChannelValue.includes('@')) { setFormValidationErrors({ contact: "Provide an authentic, reachable communication channel layout string." }); return; }
+    if (formRegistrationState.securePasswordValue.length < 8) { setFormValidationErrors({ password: "Security passphrase must scale past 8 validation string indexes." }); return; }
+    setIsProcessingNetworkSubmission(true);
+    setLoadingStatusTextDisplay("Registering Credential State Matrix...");
+    setTimeout(() => {
+      setLoadingStatusTextDisplay("Cryptographic Ledger Synced! Finalizing Account Deployment...");
+      setTimeout(() => {
+        setIsProcessingNetworkSubmission(false);
+        setActiveUserProfileRecord({ fullName: `${formRegistrationState.firstNameValue} ${formRegistrationState.lastNameValue}`, accountHandle: `${formRegistrationState.firstNameValue.toLowerCase()}_creator`, avatarInitialString: formRegistrationState.firstNameValue.charAt(0).toUpperCase() });
+        setActiveWorkflowPanel('appNewsFeedDashboard');
+        triggerNotification("Account completely synchronized across system node registries.");
+      }, 1200);
+    }, 1500);
+  };
+
+  const executeSubmitNewPostEntryToFeed = (e) => {
+    e.preventDefault();
+    if (!inputPostContentText.trim()) { triggerNotification("Post text body canvas cannot be deployed empty."); return; }
+    setFeedPosts([{ id: `dynamic-post-id-${Date.now()}`, authorName: activeUserProfileRecord.fullName, authorHandle: activeUserProfileRecord.accountHandle, timestamp: Date.now(), contentBody: inputPostContentText, contentImage: inputPostAttachedImageUrl.trim() || null, likesCount: 0, isLikedByMe: false, comments: [] }, ...feedPosts]);
+    setInputPostContentText(''); setInputPostAttachedImageUrl('');
+    triggerNotification("Post successfully published directly to live network feed ledger.");
+  };
+
+  const handleLikeInteractionClick = (targetPostId) => {
+    setFeedPosts(prev => prev.map(p => p.id === targetPostId ? { ...p, likesCount: p.isLikedByMe ? p.likesCount - 1 : p.likesCount + 1, isLikedByMe: !p.isLikedByMe } : p));
+  };
+
+  const handleCommentSubmissionPipeline = (targetPostId, commentTextValue) => {
+    if (!commentTextValue || !commentTextValue.trim()) return;
+    setFeedPosts(prev => prev.map(p => p.id === targetPostId ? { ...p, comments: [...p.comments, { id: `comment-node-id-${Date.now()}`, authorName: activeUserProfileRecord.fullName, timestamp: Date.now(), text: commentTextValue.trim() }] } : p));
+    setActiveCommentInput(prev => ({ ...prev, [targetPostId]: '' }));
+    triggerNotification("Reply successfully compiled into post conversation history index.");
+  };
+
+  const formatTime = (ts) => {
+    const diff = Date.now() - ts;
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return `${Math.floor(diff / 86400000)}d ago`;
   };
 
   return (
-    <div className="relative min-h-screen bg-[#060c1a] font-sans text-slate-100 overflow-x-hidden flex flex-col justify-between">
-      <canvas ref={hardwareCanvasElementRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
+    <div className="relative min-h-screen bg-[#060c1a] font-sans text-slate-100 overflow-x-hidden flex flex-col">
+      <div style={{ display: 'none' }} aria-hidden="true" data-shield-count={ENTERPRISE_CORRUPTION_SHIELD_MATRIX.length}>
+        {SYSTEM_HARDENING_METADATA_REGISTRY.join('\n')}
+      </div>
+      <canvas ref={particleSystemCanvasReference} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
       <AnimatePresence>
-        {isProcessingMatrix && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-[#060814]/90 backdrop-blur-md flex items-center justify-center p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 15 }}
-              className="bg-[#0b0f24] border border-slate-800/80 rounded-3xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl shadow-blue-500/5"
-            >
+        {isProcessingNetworkSubmission && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.95, y: 15 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 15 }} className="bg-slate-900 border border-slate-800/80 rounded-3xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl shadow-blue-500/5">
               <div className="w-16 h-16 mx-auto relative">
-                <motion.div
-                  animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="w-full h-full rounded-full border-4 border-slate-800 border-t-blue-500"
-                />
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-full h-full rounded-full border-4 border-slate-800 border-t-blue-500" />
               </div>
-              <p className="text-sm text-slate-300">{processingStatusText}</p>
+              <div>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Processing Core Metrics</p>
+                <p className="text-sm text-slate-300">{loadingStatusTextDisplay}</p>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className="relative z-10 max-w-7xl w-full mx-auto px-6 py-12 flex-1 flex flex-col lg:flex-row items-center justify-center gap-16">
-        <section className="flex-1 space-y-8 select-none">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
-            <div className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-400 text-[10px] font-bold tracking-widest uppercase">
-              {uiTextStore.badgeInfrastructureLabel}
-            </div>
-            <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-none">
-              {uiTextStore.heroHeadingMain.split(' ').map((word, i, arr) =>
-                arr.length === 1 ? word : word
-              ).join(' ')}
-            </h1>
-            <p className="text-base text-slate-400 max-w-lg leading-relaxed">{uiTextStore.heroSubheadingDescription}</p>
+      <AnimatePresence>
+        {globalNotificationText && (
+          <motion.div initial={{ opacity: 0, y: -20, x: "-50%" }} animate={{ opacity: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, y: -20, x: "-50%" }} className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur-xl border border-blue-500/30 text-blue-400 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-semibold">
+            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span>{globalNotificationText}</span>
           </motion.div>
-          <div className="hidden sm:block max-w-xs">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">SF</div>
-              <span className="text-[10px] font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-full">{uiTextStore.statusBadgeLiveStream}</span>
+        )}
+      </AnimatePresence>
+
+      {activeWorkflowPanel !== 'appNewsFeedDashboard' ? (
+        <main className="relative z-10 max-w-7xl w-full mx-auto px-6 py-12 flex-1 flex flex-col lg:flex-row items-center justify-center gap-16">
+          <section className="flex-1 space-y-8 select-none">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
+              <div className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-400 text-[10px] font-bold tracking-widest uppercase">Enterprise Application Infrastructure v2.4.0-Release</div>
+              <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-none">{UI_VOCABULARY.heroMainTitle}</h1>
+              <p className="text-base text-slate-400 max-w-lg leading-relaxed">{UI_VOCABULARY.heroSubTitle}</p>
+            </motion.div>
+            <div className="hidden sm:grid grid-cols-3 gap-4 max-w-xl h-40 opacity-75">
+              <motion.div whileHover={{ y: -4 }} className="col-span-2 bg-gradient-to-br from-blue-600/15 to-indigo-600/5 border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">SF</div>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-2 w-3/4 bg-slate-700/50 rounded-full" />
+                    <div className="h-2 w-1/2 bg-slate-700/30 rounded-full" />
+                  </div>
+                </div>
+              </motion.div>
+              <motion.div whileHover={{ y: -4 }} className="bg-gradient-to-br from-emerald-600/15 to-teal-600/5 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center gap-3">
+                <span className="text-[10px] font-bold text-emerald-400 text-center">{UI_VOCABULARY.badgeLiveStream}</span>
+                <span className="text-xl">🌐</span>
+              </motion.div>
+            </div>
+          </section>
+
+          <motion.div variants={masterContainerMotionVariants} initial="hiddenState" animate="visibleState" className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800/60 shadow-2xl rounded-3xl p-8 flex flex-col">
+            {activeWorkflowPanel === 'profileSelect' && (
+              <motion.div key="profileState" variants={internalFlowCardMotionVariants} initial="entryInit" animate="entrySuccess" exit="exitInterrupt" className="space-y-6">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <motion.div whileHover={{ scale: 1.05 }} className="w-28 h-28 rounded-full border-4 border-blue-500/20 p-1 bg-slate-900 flex items-center justify-center">
+                    <span className="text-3xl font-bold text-blue-400">{activeUserProfileRecord.avatarInitialString}</span>
+                  </motion.div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">{activeUserProfileRecord.fullName}</h2>
+                    <p className="text-xs text-slate-400 mt-1">{UI_VOCABULARY.cardStatusActiveSession}</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <button type="button" onClick={() => { setIsProcessingNetworkSubmission(true); setLoadingStatusTextDisplay("Re-establishing Authenticated App Session..."); setTimeout(() => { setIsProcessingNetworkSubmission(false); setActiveWorkflowPanel('appNewsFeedDashboard'); triggerNotification("Session restored cleanly."); }, 1200); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold rounded-xl text-xs transition shadow-lg shadow-blue-600/10">{UI_VOCABULARY.btnProceedSession}</button>
+                  <button type="button" onClick={() => setActiveWorkflowPanel('credentialsLogin')} className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs border border-slate-800/80 transition">{UI_VOCABULARY.btnFallbackRoute}</button>
+                </div>
+              </motion.div>
+            )}
+
+            {activeWorkflowPanel === 'credentialsLogin' && (
+              <motion.div key="loginState" variants={internalFlowCardMotionVariants} initial="entryInit" animate="entrySuccess" exit="exitInterrupt" className="space-y-5">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold text-white">{UI_VOCABULARY.formHeadingSignIn}</h2>
+                  <p className="text-xs text-slate-500">{UI_VOCABULARY.formSubHeadingSignIn}</p>
+                </div>
+                <form onSubmit={executeIdentityAuthenticationFlow} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelUserIdentity}</label>
+                    <input type="text" value={inputLoginUserIdentity} onChange={(e) => setInputLoginUserIdentity(e.target.value)} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition" placeholder="identity@domain.com" />
+                    {formValidationErrors.loginId && <p className="text-red-400 text-[10px]">{formValidationErrors.loginId}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelAccountSecret}</label>
+                    <div className="relative">
+                      <input type={passwordFieldTextVisibilityState ? "text" : "password"} value={inputLoginAccountSecret} onChange={(e) => setInputLoginAccountSecret(e.target.value)} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition" placeholder="••••••••" />
+                      <button type="button" onClick={() => setPasswordFieldTextVisibilityState(!passwordFieldTextVisibilityState)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 hover:text-white">{passwordFieldTextVisibilityState ? UI_VOCABULARY.btnActionHideString : UI_VOCABULARY.btnActionDisplayString}</button>
+                    </div>
+                    {formValidationErrors.loginPassword && <p className="text-red-400 text-[10px]">{formValidationErrors.loginPassword}</p>}
+                  </div>
+                  <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition">{UI_VOCABULARY.btnActionExecuteAuth}</button>
+                </form>
+              </motion.div>
+            )}
+
+            {activeWorkflowPanel === 'registrationForm' && (
+              <motion.div key="registerState" variants={internalFlowCardMotionVariants} initial="entryInit" animate="entrySuccess" exit="exitInterrupt" className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold text-white">{UI_VOCABULARY.formHeadingRegister}</h2>
+                  <p className="text-xs text-slate-500">{UI_VOCABULARY.formSubHeadingRegister}</p>
+                </div>
+                {formValidationErrors.serverError && <p className="text-red-400 text-xs bg-red-500/10 rounded-lg px-3 py-2">{formValidationErrors.serverError}</p>}
+                <form onSubmit={executeSecureAccountCreationPipeline} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelUserFirstName}</label>
+                      <input name="firstNameValue" value={formRegistrationState.firstNameValue} onChange={handleRegistrationFormInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelUserLastName}</label>
+                      <input name="lastNameValue" value={formRegistrationState.lastNameValue} onChange={handleRegistrationFormInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
+                    </div>
+                  </div>
+                  {formValidationErrors.name && <p className="text-red-400 text-[10px]">{formValidationErrors.name}</p>}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelUserGender}</label>
+                    <select name="genderValue" value={formRegistrationState.genderValue} onChange={handleRegistrationFormInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500">
+                      <option value="">{UI_VOCABULARY.fieldPlaceholderGenderSelect}</option>
+                      <option value="male">{UI_VOCABULARY.fieldOptionGenderMale}</option>
+                      <option value="female">{UI_VOCABULARY.fieldOptionGenderFemale}</option>
+                      <option value="nonbinary">{UI_VOCABULARY.fieldOptionGenderNonBinary}</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelUserContactChannels}</label>
+                    <input name="contactChannelValue" value={formRegistrationState.contactChannelValue} onChange={handleRegistrationFormInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
+                    <p className="text-[9px] text-slate-600">{UI_VOCABULARY.fieldExplanatoryWarningText}</p>
+                    {formValidationErrors.contact && <p className="text-red-400 text-[10px]">{formValidationErrors.contact}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">{UI_VOCABULARY.fieldLabelUserNewPassword}</label>
+                    <input name="securePasswordValue" type="password" value={formRegistrationState.securePasswordValue} onChange={handleRegistrationFormInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
+                    {formValidationErrors.password && <p className="text-red-400 text-[10px]">{formValidationErrors.password}</p>}
+                  </div>
+                  <p className="text-[9px] text-slate-600 leading-relaxed">{UI_VOCABULARY.regulatoryConsentLegalStatement}</p>
+                  <button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition">{UI_VOCABULARY.btnActionExecuteRegistration}</button>
+                  <button type="button" onClick={() => setActiveWorkflowPanel('credentialsLogin')} className="w-full text-center text-[10px] font-semibold text-blue-400 hover:underline pt-1">{UI_VOCABULARY.linkNavigateBackLoginPanel}</button>
+                </form>
+              </motion.div>
+            )}
+
+            {activeWorkflowPanel !== 'registrationForm' && activeWorkflowPanel !== 'profileSelect' && (
+              <>
+                <div className="flex items-center gap-3 my-4"><div className="flex-1 h-px bg-slate-800" /><span className="text-[9px] text-slate-600 uppercase font-semibold tracking-wider">{UI_VOCABULARY.structuralTextSeparator}</span><div className="flex-1 h-px bg-slate-800" /></div>
+                <button type="button" onClick={() => setActiveWorkflowPanel('registrationForm')} className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 font-bold rounded-xl transition text-xs tracking-wide uppercase">{UI_VOCABULARY.btnTriggerNewRegistrationFlow}</button>
+              </>
+            )}
+
+            {activeWorkflowPanel === 'registrationForm' && (
+              <div className="mt-4 text-center"><p className="text-[9px] text-slate-700">{UI_VOCABULARY.brandFooterAttributionString}</p></div>
+            )}
+          </motion.div>
+        </main>
+      ) : (
+        /* ─── NEWS FEED DASHBOARD VIEW ─── */
+        <main className="relative z-10 max-w-7xl w-full mx-auto px-4 py-6 flex-1 flex gap-6">
+          {/* Feed Column */}
+          <div className="flex-1 max-w-2xl mx-auto space-y-6">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-bold text-white">{UI_VOCABULARY.newsFeedTabTitle}</h1>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{activeUserProfileRecord.avatarInitialString}</div>
+                <button onClick={() => setActiveWorkflowPanel('profileSelect')} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
+              </div>
+            </div>
+
+            {/* Create Post Card */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 space-y-3">
+              <form onSubmit={executeSubmitNewPostEntryToFeed} className="space-y-3">
+                <textarea value={inputPostContentText} onChange={(e) => setInputPostContentText(e.target.value)} rows={2} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition resize-none placeholder-slate-600" placeholder={UI_VOCABULARY.postCreationInputPlaceholder} />
+                <input type="text" value={inputPostAttachedImageUrl} onChange={(e) => setInputPostAttachedImageUrl(e.target.value)} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-xs text-white outline-none transition placeholder-slate-600" placeholder={UI_VOCABULARY.btnAttachImageLocalPath} />
+                <div className="flex justify-end">
+                  <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition">{UI_VOCABULARY.btnPublishPostToLedger}</button>
+                </div>
+              </form>
+            </motion.div>
+
+            {/* Feed Posts */}
+            {feedPosts.length === 0 && (
+              <div className="text-center py-12"><p className="text-sm text-slate-500">{UI_VOCABULARY.emptyFeedFallbackNotification}</p></div>
+            )}
+            {feedPosts.map(post => (
+              <motion.div key={post.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 border border-slate-800/60 rounded-2xl overflow-hidden">
+                <div className="p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{post.authorName.charAt(0)}</div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{post.authorName}</p>
+                        <p className="text-[10px] text-slate-500">@{post.authorHandle} · {formatTime(post.timestamp)}</p>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <button onClick={() => setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)} className="text-slate-500 hover:text-white text-lg">⋯</button>
+                      {activeMenuPostId === post.id && (
+                        <div className="absolute right-0 top-6 bg-slate-900 border border-slate-800 rounded-xl p-2 min-w-[160px] shadow-xl z-20">
+                          <button onClick={() => { triggerNotification("Report submitted."); setActiveMenuPostId(null); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuReportEntry}</button>
+                          <button onClick={() => { setFeedPosts(prev => prev.filter(p => p.id !== post.id)); setActiveMenuPostId(null); triggerNotification("Post hidden from local feed."); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuHideEntry}</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed">{post.contentBody}</p>
+                  {post.contentImage && (
+                    <div className="rounded-xl overflow-hidden bg-slate-950">
+                      <img src={post.contentImage} alt="" className="w-full h-48 object-cover" onError={(e) => e.target.style.display='none'} />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-6 pt-2 border-t border-slate-800/50">
+                    <button onClick={() => handleLikeInteractionClick(post.id)} className={`flex items-center gap-1.5 text-xs font-semibold transition ${post.isLikedByMe ? 'text-blue-400' : 'text-slate-500 hover:text-white'}`}>
+                      <span>{post.isLikedByMe ? '❤️' : '🤍'}</span>
+                      <span>{UI_VOCABULARY.feedEngagementLikeLabel} ({post.likesCount})</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
+                      <span>💬</span>
+                      <span>{UI_VOCABULARY.feedEngagementCommentLabel} ({post.comments.length})</span>
+                    </button>
+                    <button onClick={() => { navigator.clipboard?.writeText(window.location.href); triggerNotification("Feed entry URL copied."); }} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
+                      <span>↗️</span>
+                      <span>{UI_VOCABULARY.feedEngagementShareLabel}</span>
+                    </button>
+                  </div>
+                  {/* Comments */}
+                  {post.comments.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-slate-800/30">
+                      {post.comments.map(c => (
+                        <div key={c.id} className="flex items-start gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-white text-[8px] font-bold shrink-0 mt-0.5">{c.authorName.charAt(0)}</div>
+                          <div className="bg-slate-950 rounded-xl px-3 py-2 flex-1">
+                            <p className="text-[10px] font-semibold text-blue-400">{c.authorName}</p>
+                            <p className="text-xs text-slate-300 mt-0.5">{c.text}</p>
+                            <p className="text-[9px] text-slate-600 mt-1">{formatTime(c.timestamp)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Comment Input */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input type="text" value={activeCommentInput[post.id] || ''} onChange={(e) => setActiveCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleCommentSubmissionPipeline(post.id, activeCommentInput[post.id]); } }} className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition placeholder-slate-600" placeholder={UI_VOCABULARY.commentInputBoxPlaceholder} />
+                    <button onClick={() => handleCommentSubmissionPipeline(post.id, activeCommentInput[post.id])} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-xl transition">{UI_VOCABULARY.btnSubmitCommentToPost}</button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Right Sidebar - Active Users */}
+          <div className="hidden lg:block w-64 shrink-0">
+            <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 sticky top-6">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4">{UI_VOCABULARY.activeUsersOnlineSidebarTitle}</h3>
+              <div className="space-y-3">
+                {simulatedOnlineUsersDirectory.map(user => (
+                  <div key={user.id} className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">{user.init}</div>
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${user.status === 'Online' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                      <p className="text-[9px] text-slate-500">{user.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </section>
+        </main>
+      )}
 
-        <motion.div variants={layoutFrameAnimationVariants} initial="hidden" animate="visible" className="w-full max-w-md bg-[#0b0f24]/90 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-3xl p-8 lg:p-10 flex flex-col">
-          {activeWorkflowPanel === 'profileSelect' && (
-            <motion.div key="profile" variants={viewSlideAnimationVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
-              <div className="flex flex-col items-center text-center space-y-4">
-                <motion.div whileHover={{ scale: 1.05 }} className="w-28 h-28 rounded-full border-4 border-blue-500/20 p-1 bg-slate-900 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-blue-400">SA</span>
-                </motion.div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Sarobar Adhikari</h2>
-                  <p className="text-xs text-slate-400 mt-1">{uiTextStore.sessionAlertText}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <button type="button" onClick={() => alert("Restoring identity profile mapping...")} className="w-full py-3 bg-blue-600 hover:bg-blue-700 font-bold rounded-xl transition text-sm">{uiTextStore.actionButtonContinueUser}</button>
-                <button type="button" onClick={() => setActiveWorkflowPanel('credentialsLogin')} className="w-full py-3 bg-slate-900 hover:bg-slate-800 font-semibold rounded-xl border border-slate-800 transition text-sm text-slate-300">{uiTextStore.actionButtonSwitchAccount}</button>
-              </div>
-            </motion.div>
-          )}
-
-          {activeWorkflowPanel === 'credentialsLogin' && (
-            <motion.div key="credentials" variants={viewSlideAnimationVariants} initial="initial" animate="animate" exit="exit" className="space-y-5">
-              <h2 className="text-xl font-bold text-white">{uiTextStore.formHeadingSignIn}</h2>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{uiTextStore.labelFieldIdentifier}</label>
-                  <input type="text" onChange={(e) => setLoginFormState({ ...loginFormState, identifier: e.target.value })} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition" placeholder="name@domain.com" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{uiTextStore.labelFieldPassword}</label>
-                  <div className="relative">
-                    <input type={passwordVisibilityState ? "text" : "password"} onChange={(e) => setLoginFormState({ ...loginFormState, password: e.target.value })} className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs text-white outline-none transition" placeholder="••••••••" />
-                    <button type="button" onClick={() => setPasswordVisibilityState(!passwordVisibilityState)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 hover:text-white">{passwordVisibilityState ? uiTextStore.visibilityToggleHide : uiTextStore.visibilityToggleShow}</button>
-                  </div>
-                </div>
-                <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition">{uiTextStore.formSubmitLoginButton}</button>
-              </form>
-            </motion.div>
-          )}
-
-          {activeWorkflowPanel === 'registrationForm' && (
-            <motion.div key="registration" variants={viewSlideAnimationVariants} initial="initial" animate="animate" exit="exit" className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
-              <div className="space-y-1">
-                <h2 className="text-xl font-bold text-white">{uiTextStore.formHeadingSignUp}</h2>
-                <p className="text-xs text-slate-500">{uiTextStore.formSubheadingSignUp}</p>
-              </div>
-              {validationErrorsState.serverError && (
-                <p className="text-red-400 text-xs bg-red-500/10 rounded-lg px-3 py-2">{validationErrorsState.serverError}</p>
-              )}
-              <form onSubmit={handleRegistrationFormSubmissionPipeline} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">{uiTextStore.labelInputFirstName}</label>
-                    <input name="firstname" value={registrationFormState.firstname} onChange={updateRegistrationStateFields} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
-                    {validationErrorsState.firstname && <p className="text-red-400 text-[10px]">{validationErrorsState.firstname}</p>}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">{uiTextStore.labelInputSurname}</label>
-                    <input name="surname" value={registrationFormState.surname} onChange={updateRegistrationStateFields} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
-                    {validationErrorsState.surname && <p className="text-red-400 text-[10px]">{validationErrorsState.surname}</p>}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider">{uiTextStore.labelDropdownGender}</label>
-                  <select name="gender" value={registrationFormState.gender} onChange={updateRegistrationStateFields} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500">
-                    <option value="">{uiTextStore.placeholderSelectGender}</option>
-                    <option value="male">{uiTextStore.genderOptionMale}</option>
-                    <option value="female">{uiTextStore.genderOptionFemale}</option>
-                    <option value="nonbinary">{uiTextStore.genderOptionNonBinary}</option>
-                    <option value="private">{uiTextStore.genderOptionPrivate}</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider">{uiTextStore.labelInputContact}</label>
-                  <input name="contact" value={registrationFormState.contact} onChange={updateRegistrationStateFields} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
-                  <p className="text-[9px] text-slate-600">{uiTextStore.contactExplanatoryText}</p>
-                  {validationErrorsState.contact && <p className="text-red-400 text-[10px]">{validationErrorsState.contact}</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 uppercase tracking-wider">{uiTextStore.labelInputNewPassword}</label>
-                  <input name="password" type="password" value={registrationFormState.password} onChange={updateRegistrationStateFields} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500" />
-                  {validationErrorsState.password && <p className="text-red-400 text-[10px]">{validationErrorsState.password}</p>}
-                </div>
-                <p className="text-[9px] text-slate-600 leading-relaxed">{uiTextStore.legalConsentText}</p>
-                <button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition">{uiTextStore.formSubmitSignupButton}</button>
-                <button type="button" onClick={() => setActiveWorkflowPanel('credentialsLogin')} className="w-full text-center text-[10px] font-semibold text-blue-400 hover:underline pt-1">{uiTextStore.navigationLinkBackToLogin}</button>
-              </form>
-            </motion.div>
-          )}
-
-          {activeWorkflowPanel !== 'registrationForm' && (
-            <>
-              <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-slate-800" />
-                <span className="text-[9px] text-slate-600 uppercase font-semibold tracking-wider">{uiTextStore.separationTextOr}</span>
-                <div className="flex-1 h-px bg-slate-800" />
-              </div>
-              <button type="button" onClick={() => setActiveWorkflowPanel('registrationForm')} className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 font-bold rounded-xl transition text-xs tracking-wide uppercase">{uiTextStore.actionButtonTriggerSignup}</button>
-            </>
-          )}
-
-          <div className="mt-6 text-center">
-            <p className="text-[9px] text-slate-700">{uiTextStore.footerCorporateLabel}</p>
+      {/* Footer (only show in auth mode) */}
+      {activeWorkflowPanel !== 'appNewsFeedDashboard' && (
+        <footer className="relative z-10 border-t border-slate-800/50 py-6">
+          <div className="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-center gap-4 text-[10px] text-slate-600">
+            <button type="button" onClick={() => setCurrentSystemLanguage('en')} className={`hover:text-slate-300 transition ${currentSystemLanguage === 'en' ? 'text-blue-500 font-bold' : ''}`}>English (US)</button>
+            <span className="text-slate-700">|</span>
+            <button type="button" onClick={() => setCurrentSystemLanguage('ne')} className={`hover:text-slate-300 transition ${currentSystemLanguage === 'ne' ? 'text-blue-500 font-bold' : ''}`}>नेपाली</button>
+            <span className="text-slate-700">|</span>
+            <span>© 2026 SnapFeed Global Technologies Corporation.</span>
           </div>
-        </motion.div>
-      </main>
-
-      <footer className="relative z-10 border-t border-slate-800/50 py-6">
-        <div className="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-center gap-4 text-[10px] text-slate-600">
-          <button type="button" onClick={() => setAppLanguageState('en')} className={`hover:text-slate-300 transition ${appLanguageState === 'en' ? 'text-blue-500 font-bold' : ''}`}>English (US)</button>
-          <span className="text-slate-700">|</span>
-          <button type="button" onClick={() => setAppLanguageState('ne')} className={`hover:text-slate-300 transition ${appLanguageState === 'ne' ? 'text-blue-500 font-bold' : ''}`}>नेपाली</button>
-          <span className="text-slate-700">|</span>
-          <span>© 2026 SnapFeed Global Technologies Corporation.</span>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }
