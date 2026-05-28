@@ -8,6 +8,7 @@ import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
 import SnapFeedMessenger from './SnapFeedMessenger';
 import SnapFeedUnifiedHeader from './SnapFeedUnifiedHeader';
 import SnapFeedSearchProfile from './SnapFeedSearchProfile';
+import SnapFeedFriends from './SnapFeedFriends';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -427,7 +428,7 @@ export default function SnapFeedMonolithicEngine() {
   };
 
   const handleSidebarNavigate = (itemId, label) => {
-    if (itemId === 'network_connections_node') { setFeedView('map'); return; }
+    if (itemId === 'network_connections_node') { setShowFriendsPanel(true); return; }
     setFeedView('feed');
   };
 
@@ -441,6 +442,7 @@ export default function SnapFeedMonolithicEngine() {
 
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showFriendsPanel, setShowFriendsPanel] = useState(false);
   const [currentUserId, setCurrentUserId] = useState('');
   const socketRef = useRef(null);
   const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
@@ -924,9 +926,18 @@ export default function SnapFeedMonolithicEngine() {
               {profileUpdateMsg && <p className="text-[10px] text-center text-blue-400">{profileUpdateMsg}</p>}
 
               <button type="button" onClick={saveProfileSettings} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition">Save Profile</button>
+              <button type="button" onClick={handleLogout} className="w-full py-3 bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-xs rounded-xl transition border border-red-500/20">Logout</button>
             </div>
           </div>
         </div>
+      )}
+
+      {showFriendsPanel && (
+        <SnapFeedFriends
+          token={localStorage.getItem('sf_token')}
+          onClose={() => setShowFriendsPanel(false)}
+          socket={socketRef.current}
+        />
       )}
 
       {showSearchPanel && (

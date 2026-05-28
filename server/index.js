@@ -316,6 +316,43 @@ app.get('/api/friends/list', authMiddleware, async (req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
+app.put('/api/friends/accept/:requestId', authMiddleware, async (req, res) => {
+  try {
+    const reqDoc = await FriendRequest.findById(req.params.requestId);
+    if (!reqDoc) return res.status(404).json({ error: 'Request not found' });
+    await User.findByIdAndUpdate(reqDoc.sender, { $addToSet: { friends: reqDoc.receiver } });
+    await User.findByIdAndUpdate(reqDoc.receiver, { $addToSet: { friends: reqDoc.sender } });
+    reqDoc.status = 'accepted';
+    await reqDoc.save();
+    res.json({ message: 'Friend request accepted' });
+  } catch { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.put('/api/friends/reject/:requestId', authMiddleware, async (req, res) => {
+  try {
+    await FriendRequest.findByIdAndUpdate(req.params.requestId, { status: 'rejected' });
+    res.json({ message: 'Friend request rejected' });
+  } catch { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.post('/api/friends/request', authMiddleware, async (req, res) => {
+  try {
+    const { receiverId } = req.body;
+    const exists = await FriendRequest.findOne({ sender: req.userId, receiver: receiverId });
+    if (exists) return res.status(400).json({ error: 'Already sent' });
+    await FriendRequest.create({ sender: req.userId, receiver: receiverId });
+    res.json({ message: 'Friend request sent' });
+  } catch { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.delete('/api/friends/remove/:friendId', authMiddleware, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.userId, { $pull: { friends: req.params.friendId } });
+    await User.findByIdAndUpdate(req.params.friendId, { $pull: { friends: req.userId } });
+    res.json({ message: 'Friend removed' });
+  } catch { res.status(500).json({ error: 'Server error' }); }
+});
+
 // ═══════════════════════════════════════════════
 // MESSAGES
 // ═══════════════════════════════════════════════
