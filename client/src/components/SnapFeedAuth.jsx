@@ -310,7 +310,6 @@ export default function SnapFeedMonolithicEngine() {
 
   const handleSidebarNavigate = (itemId, label) => {
     if (itemId === 'network_connections_node') { setFeedView('map'); return; }
-    if (itemId === 'community_channels_node') { setFeedView('messenger'); return; }
     setFeedView('feed');
   };
 
@@ -491,19 +490,6 @@ export default function SnapFeedMonolithicEngine() {
                 </div>
                 <SnapFeedLiveMap language={currentSystemLanguage} />
               </div>
-            ) : feedView === 'messenger' ? (
-              <div className="h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-lg font-bold text-white">Messenger</h1>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
-                    <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
-                  </div>
-                </div>
-                <div className="flex-1 -mx-4 -mb-6">
-                  <SnapFeedMessenger users={simulatedOnlineUsersDirectory} activeUser={activeUserProfileRecord} />
-                </div>
-              </div>
             ) : (
               <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -596,24 +582,10 @@ export default function SnapFeedMonolithicEngine() {
             )}
           </main>
 
-          {/* Right Sidebar - Active Users */}
-          <div className="hidden lg:block w-64 shrink-0">
-            <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 sticky top-6">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4">{UI_VOCABULARY.activeUsersOnlineSidebarTitle}</h3>
-              <div className="space-y-3">
-                {simulatedOnlineUsersDirectory.map(user => (
-                  <div key={user.id} className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">{user.init}</div>
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${user.status === 'Online' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-                      <p className="text-[9px] text-slate-500">{user.status}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Right Sidebar - Messenger */}
+          <div className="hidden lg:block w-[380px] shrink-0">
+            <div className="sticky top-6">
+              <SnapFeedMessenger users={simulatedOnlineUsersDirectory} activeUser={activeUserProfileRecord} />
             </div>
           </div>
         </div>
