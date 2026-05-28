@@ -3,78 +3,105 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const MAP_SYSTEM_DICTIONARY = {
   en: {
-    headerTitle: "SnapFeed Real-Time Geolocation Engine",
-    subtitle: "Hardware-accelerated tracking matrix plotting continuous coordinate telemetry.",
+    headerTitle: "SnapFeed Real-Time World Map",
+    subtitle: "Live GPS tracking with OpenStreetMap tiles.",
     btnStartTracking: "Start GPS Tracking",
     btnStopTracking: "Stop Tracking",
-    statusActive: "ACTIVE_STREAMING",
-    statusIdle: "CONNECTED_IDLE",
+    statusActive: "LIVE_TRACKING",
+    statusIdle: "STANDBY",
     labelLatitude: "Latitude",
     labelLongitude: "Longitude",
     labelAltitude: "Altitude",
-    labelHeading: "Device Bearing",
-    labelAccuracy: "GPS Precision",
-    metricsPanelTitle: "Live Satellite Telemetry",
-    logConsoleHeader: "REAL-TIME GEOSPATIAL LOGS",
+    labelHeading: "Bearing",
+    labelAccuracy: "GPS Accuracy",
+    metricsPanelTitle: "Live GPS Data",
+    logConsoleHeader: "GPS LOGS",
     toastTrackingActive: "GPS tracking started.",
     toastTrackingStopped: "GPS tracking stopped."
   },
   ne: {
-    headerTitle: "स्न्यापफिड वास्तविक समय भू-स्थान इन्जिन",
-    subtitle: "निरन्तर समन्वय टेलिमेट्री प्लट गर्दै हार्डवेयर-त्वरित ट्र्याकिङ म्याट्रिक्स।",
-    btnStartTracking: "जीपीएस ट्र्याकिङ सुरु गर्नुहोस्",
-    btnStopTracking: "टेलिमेट्री स्ट्रिम बन्द गर्नुहोस्",
-    statusActive: "सक्रिय_स्ट्रिमिङ",
-    statusIdle: "जडान_प्रतिक्षामा",
+    headerTitle: "स्न्यापफिड वास्तविक समय विश्व नक्सा",
+    subtitle: "लाइभ GPS ट्र्याकिङ OpenStreetMap टाइल्सको साथ।",
+    btnStartTracking: "GPS ट्र्याकिङ सुरु गर्नुहोस्",
+    btnStopTracking: "ट्र्याकिङ बन्द गर्नुहोस्",
+    statusActive: "लाइभ_ट्र्याकिङ",
+    statusIdle: "प्रतीक्षा",
     labelLatitude: "अक्षांश",
     labelLongitude: "देशान्तर",
     labelAltitude: "उचाइ",
-    labelHeading: "यन्त्रको दिशा",
-    labelAccuracy: "जीपीएस शुद्धता",
-    metricsPanelTitle: "लाइभ उपग्रह टेलिमेट्री",
-    logConsoleHeader: "वास्तविक समय भू-स्थानिक लगहरू",
-    toastTrackingActive: "जीपीएस ट्र्याकिङ सुरु भयो।",
-    toastTrackingStopped: "जीपीएस ट्र्याकिङ रोकियो।"
+    labelHeading: "दिशा",
+    labelAccuracy: "GPS शुद्धता",
+    metricsPanelTitle: "लाइभ GPS डाटा",
+    logConsoleHeader: "GPS लगहरू",
+    toastTrackingActive: "GPS ट्र्याकिङ सुरु भयो।",
+    toastTrackingStopped: "GPS ट्र्याकिङ रोकियो।"
   }
 };
-
-const SATELLITE_ORBITAL_MOCK_CACHE = Array.from({ length: 150 }, (_, index) => ({
-  packetId: `sf_gps_vector_node_${index + 9000}`,
-  payloadHashDigest: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-  allocationSizeBytes: Math.floor(Math.random() * 6800) + 2400,
-  isUplinkChannelHarden: index % 2 === 0,
-  pingResponseTimeMs: (Math.random() * 14.2 + 0.8).toFixed(2),
-  timestampToken: new Date(Date.now() - index * 2000).toLocaleTimeString()
-}));
 
 export default function SnapFeedLiveMap({ language = 'en' }) {
   const [systemLanguage, setSystemLanguage] = useState(language);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
   const [deviceCoordinates, setDeviceCoordinates] = useState({ lat: 27.7172, lng: 85.3240, alt: null, heading: null, accuracy: 0 });
   const [interfaceNotification, setInterfaceNotification] = useState(null);
-  const [totalCacheFootprintBytes, setTotalCacheFootprintBytes] = useState(0);
   const [geospatialLogsConsoleStream, setGeospatialLogsConsoleStream] = useState([]);
 
   const geolocationWatchWatcherRef = useRef(null);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
   const dict = MAP_SYSTEM_DICTIONARY[systemLanguage] || MAP_SYSTEM_DICTIONARY['en'];
-
-  useEffect(() => {
-    let massByteSumCalculation = 0;
-    const transientTraceCollector = [];
-    SATELLITE_ORBITAL_MOCK_CACHE.forEach((dataCluster, index) => {
-      massByteSumCalculation += dataCluster.allocationSizeBytes;
-      if (index < 6) {
-        transientTraceCollector.push(`[ORBITAL] Linked Satellite Node ${dataCluster.packetId}. Latency overhead: ${dataCluster.pingResponseTimeMs}ms`);
-      }
-    });
-    setTotalCacheFootprintBytes(massByteSumCalculation);
-    setGeospatialLogsConsoleStream(transientTraceCollector);
-    return () => stopGeospatialTrackingPipeline();
-  }, []);
 
   useEffect(() => {
     setSystemLanguage(language);
   }, [language]);
+
+  // Initialize Leaflet map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    if (typeof L === 'undefined') return;
+
+    const map = L.map(mapContainerRef.current, {
+      center: [27.7172, 85.3240],
+      zoom: 13,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      className: 'map-tiles'
+    }).addTo(map);
+
+    const marker = L.circleMarker([27.7172, 85.3240], {
+      radius: 8,
+      fillColor: '#3b82f6',
+      color: '#93c5fd',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.6
+    }).addTo(map);
+
+    mapInstanceRef.current = map;
+    markerRef.current = marker;
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+      markerRef.current = null;
+    };
+  }, []);
+
+  // Update marker position
+  useEffect(() => {
+    if (!markerRef.current || !mapInstanceRef.current) return;
+    const lat = parseFloat(deviceCoordinates.lat);
+    const lng = parseFloat(deviceCoordinates.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    markerRef.current.setLatLng([lat, lng]);
+    if (isTrackingActive) {
+      mapInstanceRef.current.setView([lat, lng], mapInstanceRef.current.getZoom(), { animate: true });
+    }
+  }, [deviceCoordinates, isTrackingActive]);
 
   const startGeospatialTrackingPipeline = () => {
     if (!navigator.geolocation) {
@@ -93,13 +120,13 @@ export default function SnapFeedLiveMap({ language = 'en' }) {
           accuracy: `${accuracy.toFixed(1)}m`
         });
         setGeospatialLogsConsoleStream(prevLogs => [
-          `[GPS] Update: Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)} at ${new Date().toLocaleTimeString()}`,
+          `[GPS] Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)} at ${new Date().toLocaleTimeString()}`,
           ...prevLogs.slice(0, 7)
         ]);
       },
       (error) => {
         setGeospatialLogsConsoleStream(prevLogs => [
-          `[GPS WARN] Sensor error code: ${error.code} at ${new Date().toLocaleTimeString()}`,
+          `[GPS WARN] Error code: ${error.code} at ${new Date().toLocaleTimeString()}`,
           ...prevLogs.slice(0, 7)
         ]);
       },
@@ -129,26 +156,12 @@ export default function SnapFeedLiveMap({ language = 'en' }) {
   return (
     <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
       <div className="bg-slate-900 border border-slate-800/80 rounded-3xl p-6 shadow-2xl">
-        <div className="h-64 rounded-2xl bg-slate-950 border border-slate-800/60 relative overflow-hidden flex items-center justify-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:16px_16px]" />
-          {isTrackingActive && (
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }} className="absolute w-80 h-80 border border-blue-500/5 rounded-full bg-gradient-to-r from-blue-500/10 via-transparent to-transparent origin-center pointer-events-none" />
-          )}
-          <motion.div animate={isTrackingActive ? { scale: [1, 1.15, 1] } : {}} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="relative z-10 flex flex-col items-center space-y-2">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-2xl border ${isTrackingActive ? 'bg-blue-600/20 border-blue-500/50 text-blue-400 animate-pulse' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
-              📍
+        <div ref={mapContainerRef} className="h-72 rounded-2xl overflow-hidden border border-slate-800/60 relative" style={{ zIndex: 1 }}>
+          {!mapInstanceRef.current && (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950">
+              <p className="text-xs text-slate-500">Loading map...</p>
             </div>
-            <span className="text-[10px] font-mono text-slate-500 uppercase block">Current Location</span>
-            <span className="text-xs font-black text-white font-mono bg-slate-900/80 px-3 py-1 border border-slate-800 rounded-lg block">
-              {deviceCoordinates.lat}°N , {deviceCoordinates.lng}°E
-            </span>
-          </motion.div>
-          <div className="absolute bottom-3 left-3 flex items-center gap-2">
-            <span className={`w-1.5 h-1.5 rounded-full ${isTrackingActive ? 'bg-emerald-500 animate-ping' : 'bg-slate-600'}`} />
-            <span className={`text-[9px] font-mono ${isTrackingActive ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {isTrackingActive ? dict.statusActive : dict.statusIdle}
-            </span>
-          </div>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-4">
           <div className="flex-1 grid grid-cols-2 gap-3">
@@ -186,7 +199,9 @@ export default function SnapFeedLiveMap({ language = 'en' }) {
       <div className="bg-slate-900/50 border border-slate-800/40 rounded-3xl p-4 space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{dict.logConsoleHeader}</h3>
-          <span className="text-[9px] text-slate-700 font-mono">BUFFER: {(totalCacheFootprintBytes / 1024).toFixed(2)} KB</span>
+          <span className={`text-[9px] font-mono ${isTrackingActive ? 'text-emerald-500' : 'text-slate-700'}`}>
+            {isTrackingActive ? '● LIVE' : '○ IDLE'}
+          </span>
         </div>
         <div className="bg-slate-950 rounded-2xl p-3 space-y-1 max-h-28 overflow-y-auto font-mono">
           {geospatialLogsConsoleStream.map((logString, index) => (
