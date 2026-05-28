@@ -4,6 +4,7 @@ import SnapFeedReactionCSS from './SnapFeedReactionCSS';
 import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 import SnapFeedLiveMap from './SnapFeedLiveMap';
 import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
+import SnapFeedMessenger from './SnapFeedMessenger';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -309,6 +310,7 @@ export default function SnapFeedMonolithicEngine() {
 
   const handleSidebarNavigate = (itemId, label) => {
     if (itemId === 'network_connections_node') { setFeedView('map'); return; }
+    if (itemId === 'community_channels_node') { setFeedView('messenger'); return; }
     setFeedView('feed');
   };
 
@@ -488,6 +490,19 @@ export default function SnapFeedMonolithicEngine() {
                   </div>
                 </div>
                 <SnapFeedLiveMap language={currentSystemLanguage} />
+              </div>
+            ) : feedView === 'messenger' ? (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h1 className="text-lg font-bold text-white">Community Groups</h1>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
+                    <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
+                  </div>
+                </div>
+                <div className="flex-1 -mx-4 -mb-6">
+                  <SnapFeedMessenger />
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
