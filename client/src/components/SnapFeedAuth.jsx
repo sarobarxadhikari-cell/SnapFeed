@@ -725,7 +725,7 @@ export default function SnapFeedMonolithicEngine() {
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
         <div className="relative z-10 flex flex-col flex-1">
-          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} onSearchClick={() => setShowSearchPanel(true)} />
+          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} onSearchClick={() => setShowSearchPanel(true)} onFriendsClick={() => setShowFriendsPanel(true)} />
           <div className="flex flex-1">
           <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
           <main className="flex-1 max-w-[700px] w-full mx-auto px-4 pt-2 pb-6 overflow-y-auto">

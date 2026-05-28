@@ -6,7 +6,7 @@ const SIDEBAR_LOCALIZATION_DICTIONARY = {
     searchNetworkInputPlaceholder: "Search SnapFeed workspace...",
     itemUserProfileName: "Sarobar Adhikari",
     itemEngineAssistantAI: "SnapFeed AI Assistant",
-    itemNetworkConnections: "Active Connections",
+    itemNetworkConnections: "Friends",
     itemAnalyticsDashboard: "Performance Metrics Dashboard",
     itemHistoryArchive: "Historical Memories",
     itemSavedBookmarks: "Bookmarked Media",

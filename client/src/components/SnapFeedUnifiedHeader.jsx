@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function SnapFeedUnifiedHeader({ onChatClick, isChatActive, onProfileClick, onSearchClick }) {
+export default function SnapFeedUnifiedHeader({ onChatClick, isChatActive, onProfileClick, onSearchClick, onFriendsClick }) {
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,6 +55,15 @@ export default function SnapFeedUnifiedHeader({ onChatClick, isChatActive, onPro
         </div>
 
         <div className="flex flex-row items-center gap-2 flex-shrink-0">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onFriendsClick && onFriendsClick()}
+            className="w-8 h-8 rounded-full bg-slate-800/80 border border-slate-700/40 flex items-center justify-center text-slate-200 outline-none cursor-pointer transition"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+          </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

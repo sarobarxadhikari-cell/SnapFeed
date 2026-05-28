@@ -38,17 +38,17 @@ export default function SnapFeedFriends({ token, onClose, onViewProfile, socket 
 
   const acceptRequest = async (requestId) => {
     try {
-      await apiFetch(`${API_BASE_URL}/api/friends/accept/${requestId}`, { method: 'PUT' });
+      const data = await apiFetch(`${API_BASE_URL}/api/friends/accept/${requestId}`, { method: 'PUT' });
       loadFriendRequests();
       loadFriends();
-    } catch {}
+    } catch (e) { console.error('Accept error:', e); }
   };
 
   const rejectRequest = async (requestId) => {
     try {
       await apiFetch(`${API_BASE_URL}/api/friends/reject/${requestId}`, { method: 'PUT' });
       loadFriendRequests();
-    } catch {}
+    } catch (e) { console.error('Reject error:', e); }
   };
 
   const sendRequest = async (receiverId) => {
