@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -14,6 +14,7 @@ app.use(cors({ origin: '*', credentials: true }));
 
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'snapfeed_secret_2026';
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ═══════════════════════════════════════════════
 // MONGOOSE MODELS
@@ -34,25 +35,12 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // ═══════════════════════════════════════════════
-// EMAIL TRANSPORTER
+// EMAIL SENDER (Resend API)
 // ═══════════════════════════════════════════════
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 5000
-  });
-};
-
 const sendVerificationEmail = async (toEmail, code) => {
   try {
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `"SnapFeed" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+      from: 'SnapFeed <onboarding@resend.dev>',
       to: toEmail,
       subject: 'Verify your SnapFeed account',
       html: `
