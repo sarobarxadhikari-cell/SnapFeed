@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SnapFeedReactionSubsystem from './SnapFeedReactionSubsystem';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -494,10 +495,7 @@ export default function SnapFeedMonolithicEngine() {
                     </div>
                   )}
                   <div className="flex items-center gap-6 pt-2 border-t border-slate-800/50">
-                    <button onClick={() => handleLikeInteractionClick(post.id)} className={`flex items-center gap-1.5 text-xs font-semibold transition ${post.isLikedByMe ? 'text-blue-400' : 'text-slate-500 hover:text-white'}`}>
-                      <span>{post.isLikedByMe ? '❤️' : '🤍'}</span>
-                      <span>{UI_VOCABULARY.feedEngagementLikeLabel} ({post.likesCount})</span>
-                    </button>
+                    <SnapFeedReactionSubsystem language={currentSystemLanguage} postId={post.id} onReaction={() => {}} />
                     <button className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
                       <span>💬</span>
                       <span>{UI_VOCABULARY.feedEngagementCommentLabel} ({post.comments.length})</span>
