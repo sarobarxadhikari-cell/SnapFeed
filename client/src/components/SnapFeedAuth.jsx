@@ -494,7 +494,7 @@ export default function SnapFeedMonolithicEngine() {
             ) : feedView === 'messenger' ? (
               <div className="h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-lg font-bold text-white">Community Groups</h1>
+                  <h1 className="text-lg font-bold text-white">Messenger</h1>
                   <div className="flex items-center gap-3">
                     <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
                     <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
