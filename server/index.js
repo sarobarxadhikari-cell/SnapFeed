@@ -4,7 +4,6 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import crypto from 'crypto';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -35,7 +34,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // ═══════════════════════════════════════════════
-// EMAIL TRANSPORTER (Gmail SMTP)
+// EMAIL TRANSPORTER
 // ═══════════════════════════════════════════════
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -43,8 +42,38 @@ const createTransporter = () => {
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    }
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 5000
   });
+};
+
+const sendVerificationEmail = async (toEmail, code) => {
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: `"SnapFeed" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject: 'Verify your SnapFeed account',
+      html: `
+        <div style="max-width:400px;margin:0 auto;padding:30px;font-family:Arial,sans-serif;background:#0f172a;color:#fff;border-radius:16px;">
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="display:inline-block;width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#6366f1);text-align:center;line-height:50px;font-weight:bold;font-size:20px;color:#fff;">SF</div>
+          </div>
+          <h2 style="text-align:center;font-size:18px;margin-bottom:10px;">Verify your email</h2>
+          <p style="text-align:center;color:#94a3b8;font-size:13px;margin-bottom:25px;">Enter this 6-digit code:</p>
+          <div style="text-align:center;margin-bottom:25px;">
+            <span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:8px;color:#3b82f6;background:#1e293b;padding:12px 24px;border-radius:10px;">${code}</span>
+          </div>
+          <p style="text-align:center;color:#64748b;font-size:11px;">Expires in 15 minutes.</p>
+        </div>
+      `
+    });
+    console.log(`Email sent to ${toEmail}`);
+  } catch (err) {
+    console.error('Email send failed:', err.message);
+    throw err;
+  }
 };
 
 // ═══════════════════════════════════════════════
@@ -75,7 +104,17 @@ app.post('/api/auth/register', async (req, res) => {
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
+      if (!existingUser.isVerified) {
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        existingUser.verificationCode = verificationCode;
+        existingUser.verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
+        existingUser.fullName = fullName;
+        existingUser.password = await bcrypt.hash(password, 12);
+        await existingUser.save();
+        sendVerificationEmail(email, verificationCode).catch(() => {});
+        return res.status(201).json({ message: 'Verification code resent', userId: existingUser._id });
+      }
+      return res.status(400).json({ error: 'Email already registered and verified' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -91,26 +130,7 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     await newUser.save();
-
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `"SnapFeed" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Verify your SnapFeed account',
-      html: `
-        <div style="max-width:400px;margin:0 auto;padding:30px;font-family:Arial,sans-serif;background:#0f172a;color:#fff;border-radius:16px;">
-          <div style="text-align:center;margin-bottom:20px;">
-            <div style="display:inline-block;width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#6366f1);text-align:center;line-height:50px;font-weight:bold;font-size:20px;color:#fff;">SF</div>
-          </div>
-          <h2 style="text-align:center;font-size:18px;margin-bottom:10px;">Verify your email</h2>
-          <p style="text-align:center;color:#94a3b8;font-size:13px;margin-bottom:25px;">Enter this 6-digit code to verify your account:</p>
-          <div style="text-align:center;margin-bottom:25px;">
-            <span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:8px;color:#3b82f6;background:#1e293b;padding:12px 24px;border-radius:10px;">${verificationCode}</span>
-          </div>
-          <p style="text-align:center;color:#64748b;font-size:11px;">This code expires in 15 minutes.</p>
-        </div>
-      `
-    });
+    sendVerificationEmail(email, verificationCode).catch(() => {});
 
     res.status(201).json({ message: 'Verification code sent to your email', userId: newUser._id });
   } catch (err) {
@@ -130,15 +150,16 @@ app.post('/api/auth/verify', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     if (user.isVerified) {
-      return res.status(400).json({ error: 'Account already verified' });
+      const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ message: 'Already verified', token, user: { id: user._id, fullName: user.fullName, email: user.email } });
     }
 
     if (user.verificationExpiry < new Date()) {
-      return res.status(400).json({ error: 'Code expired. Request a new one.' });
+      return res.status(400).json({ error: 'Code expired. Click resend.' });
     }
 
     if (user.verificationCode !== code) {
-      return res.status(400).json({ error: 'Invalid verification code' });
+      return res.status(400).json({ error: 'Invalid code' });
     }
 
     user.isVerified = true;
@@ -147,8 +168,7 @@ app.post('/api/auth/verify', async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-
-    res.json({ message: 'Account verified successfully', token, user: { id: user._id, fullName: user.fullName, email: user.email } });
+    res.json({ message: 'Verified!', token, user: { id: user._id, fullName: user.fullName, email: user.email } });
   } catch (err) {
     console.error('Verify error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -156,7 +176,7 @@ app.post('/api/auth/verify', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════
-// ROUTES: RESEND VERIFICATION CODE
+// ROUTES: RESEND CODE
 // ═══════════════════════════════════════════════
 app.post('/api/auth/resend-code', async (req, res) => {
   try {
@@ -166,35 +186,16 @@ app.post('/api/auth/resend-code', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     if (user.isVerified) {
-      return res.status(400).json({ error: 'Account already verified' });
+      return res.status(400).json({ error: 'Already verified' });
     }
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     user.verificationCode = verificationCode;
     user.verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
+    sendVerificationEmail(email, verificationCode).catch(() => {});
 
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `"SnapFeed" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Verify your SnapFeed account',
-      html: `
-        <div style="max-width:400px;margin:0 auto;padding:30px;font-family:Arial,sans-serif;background:#0f172a;color:#fff;border-radius:16px;">
-          <div style="text-align:center;margin-bottom:20px;">
-            <div style="display:inline-block;width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#6366f1);text-align:center;line-height:50px;font-weight:bold;font-size:20px;color:#fff;">SF</div>
-          </div>
-          <h2 style="text-align:center;font-size:18px;margin-bottom:10px;">New verification code</h2>
-          <p style="text-align:center;color:#94a3b8;font-size:13px;margin-bottom:25px;">Enter this 6-digit code:</p>
-          <div style="text-align:center;margin-bottom:25px;">
-            <span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:8px;color:#3b82f6;background:#1e293b;padding:12px 24px;border-radius:10px;">${verificationCode}</span>
-          </div>
-          <p style="text-align:center;color:#64748b;font-size:11px;">Expires in 15 minutes.</p>
-        </div>
-      `
-    });
-
-    res.json({ message: 'New verification code sent' });
+    res.json({ message: 'New code sent' });
   } catch (err) {
     console.error('Resend error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -215,11 +216,15 @@ app.post('/api/auth/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: 'Incorrect password' });
 
     if (!user.isVerified) {
-      return res.status(403).json({ error: 'Email not verified. Please check your inbox.', needsVerification: true });
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      user.verificationCode = verificationCode;
+      user.verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+      sendVerificationEmail(email, verificationCode).catch(() => {});
+      return res.status(403).json({ error: 'Email not verified. New code sent.', needsVerification: true });
     }
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-
     res.json({ message: 'Login successful', token, user: { id: user._id, fullName: user.fullName, email: user.email } });
   } catch (err) {
     console.error('Login error:', err);
@@ -263,7 +268,7 @@ app.put('/api/auth/profile', authMiddleware, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════
-// ROUTES: CHANGE EMAIL (sends verification to new email)
+// ROUTES: CHANGE EMAIL
 // ═══════════════════════════════════════════════
 app.post('/api/auth/change-email', authMiddleware, async (req, res) => {
   try {
@@ -274,7 +279,7 @@ app.post('/api/auth/change-email', authMiddleware, async (req, res) => {
 
     const existingUser = await User.findOne({ email: newEmail.toLowerCase() });
     if (existingUser && existingUser._id.toString() !== req.userId) {
-      return res.status(400).json({ error: 'Email already in use by another account' });
+      return res.status(400).json({ error: 'Email already in use' });
     }
 
     const user = await User.findById(req.userId);
@@ -286,26 +291,7 @@ app.post('/api/auth/change-email', authMiddleware, async (req, res) => {
     user.verificationCode = verificationCode;
     user.verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
-
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `"SnapFeed" <${process.env.EMAIL_USER}>`,
-      to: newEmail,
-      subject: 'Verify your new email - SnapFeed',
-      html: `
-        <div style="max-width:400px;margin:0 auto;padding:30px;font-family:Arial,sans-serif;background:#0f172a;color:#fff;border-radius:16px;">
-          <div style="text-align:center;margin-bottom:20px;">
-            <div style="display:inline-block;width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#6366f1);text-align:center;line-height:50px;font-weight:bold;font-size:20px;color:#fff;">SF</div>
-          </div>
-          <h2 style="text-align:center;font-size:18px;margin-bottom:10px;">Verify your new email</h2>
-          <p style="text-align:center;color:#94a3b8;font-size:13px;margin-bottom:25px;">Enter this 6-digit code to verify your updated email:</p>
-          <div style="text-align:center;margin-bottom:25px;">
-            <span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:8px;color:#3b82f6;background:#1e293b;padding:12px 24px;border-radius:10px;">${verificationCode}</span>
-          </div>
-          <p style="text-align:center;color:#64748b;font-size:11px;">This code expires in 15 minutes.</p>
-        </div>
-      `
-    });
+    sendVerificationEmail(newEmail, verificationCode).catch(() => {});
 
     res.json({ message: 'Verification code sent to new email' });
   } catch (err) {

@@ -239,6 +239,20 @@ export default function SnapFeedMonolithicEngine() {
 
   const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
+  const apiFetch = async (url, options = {}, timeoutMs = 60000) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') throw new Error('Server is waking up, please try again');
+      throw err;
+    }
+  };
+
   const executeIdentityAuthenticationFlow = async (e) => {
     e.preventDefault();
     setFormValidationErrors({});
@@ -247,9 +261,9 @@ export default function SnapFeedMonolithicEngine() {
     if (!identityTrimmed) { setFormValidationErrors({ loginId: "Please enter your email." }); return; }
     if (passwordValue.length < 6) { setFormValidationErrors({ loginPassword: "Password must be at least 6 characters." }); return; }
     setIsProcessingNetworkSubmission(true);
-    setLoadingStatusTextDisplay("Logging in...");
+    setLoadingStatusTextDisplay("Connecting to server...");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: identityTrimmed, password: passwordValue })
@@ -273,7 +287,7 @@ export default function SnapFeedMonolithicEngine() {
       triggerNotification("Welcome to SnapFeed!");
     } catch (err) {
       setIsProcessingNetworkSubmission(false);
-      setFormValidationErrors({ serverError: "Cannot connect to server. Is it running?" });
+      setFormValidationErrors({ serverError: err.message || "Cannot connect. Try again." });
     }
   };
 
@@ -290,7 +304,7 @@ export default function SnapFeedMonolithicEngine() {
     setIsProcessingNetworkSubmission(true);
     setLoadingStatusTextDisplay("Creating account...");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -308,21 +322,21 @@ export default function SnapFeedMonolithicEngine() {
       setIsProcessingNetworkSubmission(false);
       setVerificationEmail(formRegistrationState.contactChannelValue);
       setActiveWorkflowPanel('emailVerification');
-      triggerNotification("Verification code sent to your email!");
+      triggerNotification("Check your email for the code!");
     } catch (err) {
       setIsProcessingNetworkSubmission(false);
-      setFormValidationErrors({ serverError: "Cannot connect to server. Is it running?" });
+      setFormValidationErrors({ serverError: err.message || "Cannot connect. Try again." });
     }
   };
 
   const executeEmailVerification = async (e) => {
     e.preventDefault();
     setFormValidationErrors({});
-    if (!verificationCode.trim()) { setFormValidationErrors({ code: "Enter the verification code" }); return; }
+    if (!verificationCode.trim()) { setFormValidationErrors({ code: "Enter the code" }); return; }
     setIsProcessingNetworkSubmission(true);
     setLoadingStatusTextDisplay("Verifying...");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: verificationEmail, code: verificationCode })
@@ -337,17 +351,17 @@ export default function SnapFeedMonolithicEngine() {
       setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
       setIsProcessingNetworkSubmission(false);
       setActiveWorkflowPanel('appNewsFeedDashboard');
-      triggerNotification("Account verified! Welcome to SnapFeed!");
+      triggerNotification("Verified! Welcome to SnapFeed!");
     } catch (err) {
       setIsProcessingNetworkSubmission(false);
-      setFormValidationErrors({ serverError: "Cannot connect to server." });
+      setFormValidationErrors({ code: err.message || "Try again" });
     }
   };
 
   const executeResendCode = async () => {
     setIsResending(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/resend-code`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/auth/resend-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: verificationEmail })
@@ -355,13 +369,13 @@ export default function SnapFeedMonolithicEngine() {
       const data = await res.json();
       setIsResending(false);
       if (res.ok) {
-        triggerNotification("New code sent to your email!");
+        triggerNotification("New code sent!");
       } else {
         triggerNotification(data.error);
       }
     } catch (err) {
       setIsResending(false);
-      triggerNotification("Cannot connect to server.");
+      triggerNotification("Failed to resend. Try again.");
     }
   };
 
