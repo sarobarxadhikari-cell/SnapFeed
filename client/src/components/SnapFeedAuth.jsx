@@ -237,29 +237,51 @@ export default function SnapFeedMonolithicEngine() {
     setFormRegistrationState({ ...formRegistrationState, [e.target.name]: e.target.value });
   };
 
-  const executeIdentityAuthenticationFlow = (e) => {
+  const API_BASE_URL = 'http://localhost:5000';
+
+  const executeIdentityAuthenticationFlow = async (e) => {
     e.preventDefault();
     setFormValidationErrors({});
     const identityTrimmed = inputLoginUserIdentity.trim();
     const passwordValue = inputLoginAccountSecret;
     if (!identityTrimmed) { setFormValidationErrors({ loginId: "Please enter your email." }); return; }
     if (passwordValue.length < 6) { setFormValidationErrors({ loginPassword: "Password must be at least 6 characters." }); return; }
-    const matchedAccount = registeredAccounts.find(acc => acc.contact.toLowerCase() === identityTrimmed.toLowerCase() && acc.password === passwordValue);
-    if (!matchedAccount) {
-      setFormValidationErrors({ serverError: "Account not found. Check your email or create a new account." });
-      return;
-    }
     setIsProcessingNetworkSubmission(true);
     setLoadingStatusTextDisplay("Logging in...");
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: identityTrimmed, password: passwordValue })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setIsProcessingNetworkSubmission(false);
+        if (data.needsVerification) {
+          setVerificationEmail(identityTrimmed);
+          setActiveWorkflowPanel('emailVerification');
+          triggerNotification("Please verify your email first.");
+          return;
+        }
+        setFormValidationErrors({ serverError: data.error });
+        return;
+      }
+      localStorage.setItem('sf_token', data.token);
+      setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
       setIsProcessingNetworkSubmission(false);
-      setActiveUserProfileRecord({ fullName: matchedAccount.fullName, accountHandle: matchedAccount.handle, avatarInitialString: matchedAccount.firstName.charAt(0).toUpperCase() });
       setActiveWorkflowPanel('appNewsFeedDashboard');
       triggerNotification("Welcome to SnapFeed!");
-    }, 1500);
+    } catch (err) {
+      setIsProcessingNetworkSubmission(false);
+      setFormValidationErrors({ serverError: "Cannot connect to server. Is it running?" });
+    }
   };
 
-  const executeSecureAccountCreationPipeline = (e) => {
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isResending, setIsResending] = useState(false);
+
+  const executeSecureAccountCreationPipeline = async (e) => {
     e.preventDefault();
     setFormValidationErrors({});
     if (!formRegistrationState.firstNameValue.trim() || !formRegistrationState.lastNameValue.trim()) { setFormValidationErrors({ name: "Please enter your first and last name." }); return; }
@@ -267,24 +289,80 @@ export default function SnapFeedMonolithicEngine() {
     if (formRegistrationState.securePasswordValue.length < 8) { setFormValidationErrors({ password: "Password must be at least 8 characters." }); return; }
     setIsProcessingNetworkSubmission(true);
     setLoadingStatusTextDisplay("Creating account...");
-    const newAccount = {
-      firstName: formRegistrationState.firstNameValue,
-      lastName: formRegistrationState.lastNameValue,
-      fullName: `${formRegistrationState.firstNameValue} ${formRegistrationState.lastNameValue}`,
-      handle: `${formRegistrationState.firstNameValue.toLowerCase()}_creator`,
-      contact: formRegistrationState.contactChannelValue,
-      password: formRegistrationState.securePasswordValue
-    };
-    setTimeout(() => {
-      setLoadingStatusTextDisplay("Almost done...");
-      setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: `${formRegistrationState.firstNameValue} ${formRegistrationState.lastNameValue}`,
+          email: formRegistrationState.contactChannelValue,
+          password: formRegistrationState.securePasswordValue
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
         setIsProcessingNetworkSubmission(false);
-        setRegisteredAccounts(prev => [...prev, newAccount]);
-        setActiveUserProfileRecord({ fullName: newAccount.fullName, accountHandle: newAccount.handle, avatarInitialString: newAccount.firstName.charAt(0).toUpperCase() });
-        setActiveWorkflowPanel('appNewsFeedDashboard');
-        triggerNotification("Account created successfully.");
-      }, 1200);
-    }, 1500);
+        setFormValidationErrors({ serverError: data.error });
+        return;
+      }
+      setIsProcessingNetworkSubmission(false);
+      setVerificationEmail(formRegistrationState.contactChannelValue);
+      setActiveWorkflowPanel('emailVerification');
+      triggerNotification("Verification code sent to your email!");
+    } catch (err) {
+      setIsProcessingNetworkSubmission(false);
+      setFormValidationErrors({ serverError: "Cannot connect to server. Is it running?" });
+    }
+  };
+
+  const executeEmailVerification = async (e) => {
+    e.preventDefault();
+    setFormValidationErrors({});
+    if (!verificationCode.trim()) { setFormValidationErrors({ code: "Enter the verification code" }); return; }
+    setIsProcessingNetworkSubmission(true);
+    setLoadingStatusTextDisplay("Verifying...");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: verificationEmail, code: verificationCode })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setIsProcessingNetworkSubmission(false);
+        setFormValidationErrors({ code: data.error });
+        return;
+      }
+      localStorage.setItem('sf_token', data.token);
+      setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
+      setIsProcessingNetworkSubmission(false);
+      setActiveWorkflowPanel('appNewsFeedDashboard');
+      triggerNotification("Account verified! Welcome to SnapFeed!");
+    } catch (err) {
+      setIsProcessingNetworkSubmission(false);
+      setFormValidationErrors({ serverError: "Cannot connect to server." });
+    }
+  };
+
+  const executeResendCode = async () => {
+    setIsResending(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/resend-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: verificationEmail })
+      });
+      const data = await res.json();
+      setIsResending(false);
+      if (res.ok) {
+        triggerNotification("New code sent to your email!");
+      } else {
+        triggerNotification(data.error);
+      }
+    } catch (err) {
+      setIsResending(false);
+      triggerNotification("Cannot connect to server.");
+    }
   };
 
   const handleCommentSubmissionPipeline = (targetPostId, commentTextValue) => {
@@ -311,6 +389,98 @@ export default function SnapFeedMonolithicEngine() {
     setInputLoginAccountSecret('');
     setActiveWorkflowPanel('credentialsLogin');
     setProfileMenuOpen(false);
+    localStorage.removeItem('sf_token');
+  };
+
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
+  const [profileUpdateMsg, setProfileUpdateMsg] = useState('');
+  const [showEmailChange, setShowEmailChange] = useState(false);
+  const [newEmailInput, setNewEmailInput] = useState('');
+  const [emailChangeCode, setEmailChangeCode] = useState('');
+  const [emailChangeStep, setEmailChangeStep] = useState('input');
+
+  const openProfileSettings = async () => {
+    setProfileMenuOpen(false);
+    const token = localStorage.getItem('sf_token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.user) {
+        setProfileFormData({ fullName: data.user.fullName || '', username: data.user.username || '', dateOfBirth: data.user.dateOfBirth || '', bio: data.user.bio || '', email: data.user.email || '' });
+        setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
+      }
+    } catch (err) {}
+    setShowProfileSettings(true);
+  };
+
+  const saveProfileSettings = async () => {
+    const token = localStorage.getItem('sf_token');
+    if (!token) return;
+    setProfileUpdateMsg('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fullName: profileFormData.fullName, username: profileFormData.username, dateOfBirth: profileFormData.dateOfBirth, bio: profileFormData.bio })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfileUpdateMsg('Profile saved!');
+        setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
+      } else {
+        setProfileUpdateMsg(data.error);
+      }
+    } catch (err) {
+      setProfileUpdateMsg('Cannot connect to server');
+    }
+  };
+
+  const submitEmailChange = async () => {
+    const token = localStorage.getItem('sf_token');
+    if (!token || !newEmailInput.includes('@')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/change-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ newEmail: newEmailInput })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEmailChangeStep('verify');
+        setProfileUpdateMsg('Code sent to new email!');
+      } else {
+        setProfileUpdateMsg(data.error);
+      }
+    } catch (err) {
+      setProfileUpdateMsg('Cannot connect to server');
+    }
+  };
+
+  const verifyEmailChange = async () => {
+    const token = localStorage.getItem('sf_token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newEmailInput, code: emailChangeCode })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('sf_token', data.token);
+        setProfileFormData(prev => ({ ...prev, email: newEmailInput }));
+        setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName.charAt(0).toUpperCase() });
+        setShowEmailChange(false);
+        setEmailChangeStep('input');
+        setProfileUpdateMsg('Email verified and updated!');
+      } else {
+        setProfileUpdateMsg(data.error);
+      }
+    } catch (err) {
+      setProfileUpdateMsg('Cannot connect to server');
+    }
   };
 
   return (
@@ -472,12 +642,38 @@ export default function SnapFeedMonolithicEngine() {
             {activeWorkflowPanel === 'registrationForm' && (
               <div className="mt-4 text-center"><p className="text-[9px] text-slate-700">{UI_VOCABULARY.brandFooterAttributionString}</p></div>
             )}
+
+            {activeWorkflowPanel === 'emailVerification' && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-600/20 flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                  </div>
+                  <h2 className="text-sm font-bold text-white">Verify your email</h2>
+                  <p className="text-[10px] text-slate-500 mt-1">Code sent to <span className="text-slate-300">{verificationEmail}</span></p>
+                </div>
+                <form onSubmit={executeEmailVerification} className="space-y-3">
+                  <div>
+                    <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} placeholder="Enter 6-digit code" maxLength={6} className="w-full bg-slate-950 border border-slate-800/80 focus:border-blue-500 rounded-xl px-4 py-3 text-center text-lg tracking-[8px] text-white placeholder-slate-600 outline-none transition font-mono" />
+                    {formValidationErrors.code && <p className="text-red-400 text-[10px] mt-1">{formValidationErrors.code}</p>}
+                  </div>
+                  {formValidationErrors.serverError && <p className="text-red-400 text-[10px] text-center">{formValidationErrors.serverError}</p>}
+                  <button type="submit" disabled={isProcessingNetworkSubmission} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-blue-600/10">
+                    {isProcessingNetworkSubmission ? "Verifying..." : "Verify Account"}
+                  </button>
+                </form>
+                <button type="button" onClick={executeResendCode} disabled={isResending} className="w-full text-center text-[10px] font-semibold text-blue-400 hover:underline disabled:opacity-50">
+                  {isResending ? "Sending..." : "Resend code"}
+                </button>
+                <button type="button" onClick={() => setActiveWorkflowPanel('credentialsLogin')} className="w-full text-center text-[10px] font-semibold text-slate-500 hover:underline">Back to login</button>
+              </div>
+            )}
           </motion.div>
         </main>
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
         <div className="relative z-10 flex flex-col flex-1">
-          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => setProfileMenuOpen(!profileMenuOpen)} />
+          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} />
           <div className="flex flex-1">
           <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
           <main className="flex-1 max-w-[700px] w-full mx-auto px-4 pt-2 pb-6 overflow-y-auto">
@@ -600,6 +796,74 @@ export default function SnapFeedMonolithicEngine() {
             <span>© 2026 SnapFeed Global Technologies Corporation.</span>
           </div>
         </footer>
+      )}
+
+      {showProfileSettings && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[80vh] overflow-y-auto">
+            <button onClick={() => { setShowProfileSettings(false); setShowEmailChange(false); setEmailChangeStep('input'); }} className="absolute top-4 right-4 text-slate-500 hover:text-white font-bold text-xs p-1 outline-none">✕</button>
+            <h2 className="text-sm font-bold text-white mb-4">Personal Information</h2>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-slate-400 font-semibold mb-1 block">Full Name</label>
+                <input type="text" value={profileFormData.fullName} onChange={(e) => setProfileFormData({ ...profileFormData, fullName: e.target.value })} className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition" />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400 font-semibold mb-1 block">Username</label>
+                <input type="text" value={profileFormData.username} onChange={(e) => setProfileFormData({ ...profileFormData, username: e.target.value })} placeholder="e.g. sarobar_dev" className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition" />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400 font-semibold mb-1 block">Date of Birth</label>
+                <input type="date" value={profileFormData.dateOfBirth} onChange={(e) => setProfileFormData({ ...profileFormData, dateOfBirth: e.target.value })} className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white outline-none transition" />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400 font-semibold mb-1 block">Bio</label>
+                <textarea value={profileFormData.bio} onChange={(e) => setProfileFormData({ ...profileFormData, bio: e.target.value })} placeholder="Tell something about yourself..." rows={3} className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition resize-none" />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] text-slate-400 font-semibold">Email</label>
+                  <button type="button" onClick={() => setShowEmailChange(!showEmailChange)} className="text-[10px] text-blue-400 hover:underline">
+                    {showEmailChange ? 'Cancel' : 'Change Email'}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="text" value={profileFormData.email} readOnly className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-400 outline-none" />
+                  <span className={`text-[9px] px-2 py-1 rounded-full font-bold ${profileFormData.email ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {profileFormData.email ? 'Verified' : 'Unverified'}
+                  </span>
+                </div>
+              </div>
+
+              {showEmailChange && (
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                  <p className="text-[10px] text-slate-400">Enter your new email address:</p>
+                  {emailChangeStep === 'input' ? (
+                    <>
+                      <input type="email" value={newEmailInput} onChange={(e) => setNewEmailInput(e.target.value)} placeholder="new@email.com" className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 outline-none transition" />
+                      <button type="button" onClick={submitEmailChange} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] rounded-xl transition">Send Verification Code</button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[10px] text-slate-500">Code sent to <span className="text-white">{newEmailInput}</span></p>
+                      <input type="text" value={emailChangeCode} onChange={(e) => setEmailChangeCode(e.target.value)} placeholder="Enter 6-digit code" maxLength={6} className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white text-center tracking-[6px] font-mono placeholder-slate-600 outline-none transition" />
+                      <button type="button" onClick={verifyEmailChange} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-xl transition">Verify & Update Email</button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {profileUpdateMsg && <p className="text-[10px] text-center text-blue-400">{profileUpdateMsg}</p>}
+
+              <button type="button" onClick={saveProfileSettings} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition">Save Profile</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
