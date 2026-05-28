@@ -289,7 +289,24 @@ export default function SnapFeedMonolithicEngine() {
       socket.on('call_offer', async ({ offer, from }) => {
         const fromUser = await apiFetch(`${API_BASE_URL}/api/users/profile/${from}`);
         if (fromUser.user) {
-          setActiveVideoCall({ targetUser: fromUser.user, isIncoming: true, offer });
+          setIncomingCall({ user: fromUser.user, offer });
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ringInterval = setInterval(() => {
+              const o1 = ctx.createOscillator();
+              const o2 = ctx.createOscillator();
+              const g = ctx.createGain();
+              o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+              o1.type = 'sine'; o2.type = 'sine';
+              o1.frequency.setValueAtTime(440, ctx.currentTime);
+              o2.frequency.setValueAtTime(480, ctx.currentTime);
+              g.gain.setValueAtTime(0.5, ctx.currentTime);
+              g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+              o1.start(ctx.currentTime); o2.start(ctx.currentTime);
+              o1.stop(ctx.currentTime + 0.8); o2.stop(ctx.currentTime + 0.8);
+            }, 1000);
+            incomingCallRingRef.current = ringInterval;
+          } catch {}
         }
       });
       socketRef.current = socket;
@@ -482,6 +499,8 @@ export default function SnapFeedMonolithicEngine() {
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxOpenChat, setMessageBoxOpenChat] = useState(null);
   const [activeVideoCall, setActiveVideoCall] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const incomingCallRingRef = useRef(null);
   const [currentUserId, setCurrentUserId] = useState('');
   const socketRef = useRef(null);
   const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
@@ -968,6 +987,26 @@ export default function SnapFeedMonolithicEngine() {
               <button type="button" onClick={handleLogout} className="w-full py-3 bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-xs rounded-xl transition border border-red-500/20">Logout</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {incomingCall && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.8, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-8 shadow-2xl text-center">
+            <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4 overflow-hidden shadow-lg shadow-blue-500/30">
+              {incomingCall.user.avatar ? <img src={incomingCall.user.avatar} className="w-full h-full object-cover" /> : incomingCall.user.fullName?.charAt(0)}
+            </motion.div>
+            <h3 className="text-base font-bold text-white mb-1">{incomingCall.user.fullName}</h3>
+            <p className="text-xs text-blue-400 mb-8 animate-pulse">Incoming Video Call...</p>
+            <div className="flex justify-center gap-8">
+              <button onClick={() => { clearInterval(incomingCallRingRef.current); setIncomingCall(null); if (socket) socket.emit('call_end', { to: incomingCall.user._id }); }} className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition shadow-lg shadow-red-600/30">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" /></svg>
+              </button>
+              <button onClick={() => { clearInterval(incomingCallRingRef.current); setActiveVideoCall({ targetUser: incomingCall.user, isIncoming: true, offer: incomingCall.offer }); setIncomingCall(null); }} className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center transition shadow-lg shadow-emerald-600/30">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" /></svg>
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
 
