@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function SnapFeedUnifiedHeader({ onChatClick, isChatActive, onProfileClick }) {
+export default function SnapFeedUnifiedHeader({ onChatClick, isChatActive, onProfileClick, onSearchClick }) {
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -23,10 +23,10 @@ export default function SnapFeedUnifiedHeader({ onChatClick, isChatActive, onPro
           </div>
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search..."
-            className="w-[160px] bg-slate-950 border border-slate-800/80 focus:border-blue-500 rounded-full px-4 py-1.5 text-[11px] text-white placeholder-slate-600 outline-none transition"
+            onClick={() => onSearchClick && onSearchClick()}
+            readOnly
+            className="w-[160px] bg-slate-950 border border-slate-800/80 focus:border-blue-500 rounded-full px-4 py-1.5 text-[11px] text-white placeholder-slate-600 outline-none transition cursor-pointer"
           />
         </div>
 

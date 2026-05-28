@@ -6,6 +6,7 @@ import SnapFeedLiveMap from './SnapFeedLiveMap';
 import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
 import SnapFeedMessenger from './SnapFeedMessenger';
 import SnapFeedUnifiedHeader from './SnapFeedUnifiedHeader';
+import SnapFeedSearchProfile from './SnapFeedSearchProfile';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -409,6 +410,7 @@ export default function SnapFeedMonolithicEngine() {
   };
 
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ fullName: '', username: '', dateOfBirth: '', bio: '', email: '' });
   const [profileUpdateMsg, setProfileUpdateMsg] = useState('');
   const [showEmailChange, setShowEmailChange] = useState(false);
@@ -689,7 +691,7 @@ export default function SnapFeedMonolithicEngine() {
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
         <div className="relative z-10 flex flex-col flex-1">
-          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} />
+          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} onSearchClick={() => setShowSearchPanel(true)} />
           <div className="flex flex-1">
           <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
           <main className="flex-1 max-w-[700px] w-full mx-auto px-4 pt-2 pb-6 overflow-y-auto">
@@ -893,6 +895,22 @@ export default function SnapFeedMonolithicEngine() {
             </div>
           </div>
         </div>
+      )}
+
+      {showSearchPanel && (
+        <SnapFeedSearchProfile
+          token={localStorage.getItem('sf_token')}
+          currentUserId={''}
+          onClose={() => setShowSearchPanel(false)}
+          onViewProfile={(action) => {
+            if (action.action === 'send_friend_request' && window.io) {
+              window.io.emit('send_friend_request', { senderId: '', receiverId: action.receiverId });
+            }
+            if (action.action === 'send_message' && window.io) {
+              window.io.emit('send_message', { senderId: '', receiverId: action.receiverId, text: action.text });
+            }
+          }}
+        />
       )}
     </div>
   );
