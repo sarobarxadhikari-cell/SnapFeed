@@ -3,6 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
+const playMessageSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
+    osc1.frequency.setValueAtTime(1100, ctx.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc1.start(ctx.currentTime);
+    osc2.start(ctx.currentTime + 0.08);
+    osc1.stop(ctx.currentTime + 0.3);
+    osc2.stop(ctx.currentTime + 0.35);
+  } catch {}
+};
+
 export default function SnapFeedMessageBox({ token, currentUserId, socket, onClose, openChatWith }) {
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
@@ -33,7 +56,10 @@ export default function SnapFeedMessageBox({ token, currentUserId, socket, onClo
   useEffect(() => {
     if (!socket) return;
     socket.on('receive_message', (msg) => {
-      setChatMessages(prev => [...prev, msg]);
+      if (activeChat && (msg.sender?._id === activeChat._id || msg.sender === activeChat._id)) {
+        setChatMessages(prev => [...prev, msg]);
+      }
+      playMessageSound();
       loadConversations();
     });
     socket.on('message_sent_confirm', (msg) => {
