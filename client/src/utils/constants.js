@@ -1,4 +1,4 @@
-const PROD_API = 'https://snapfeed-backend.onrender.com';
+const PROD_API = 'https://snapfeed-ihhh.onrender.com';
 export const API_BASE = import.meta.env.PROD ? `${PROD_API}/api` : '/api';
 export const SOCKET_URL = import.meta.env.PROD ? PROD_API : '/';
 
