@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SnapFeedReactionSubsystem from './SnapFeedReactionSubsystem';
+import SnapFeedReactionCSS from './SnapFeedReactionCSS';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -261,10 +261,6 @@ export default function SnapFeedMonolithicEngine() {
     triggerNotification("Post successfully published directly to live network feed ledger.");
   };
 
-  const handleLikeInteractionClick = (targetPostId) => {
-    setFeedPosts(prev => prev.map(p => p.id === targetPostId ? { ...p, likesCount: p.isLikedByMe ? p.likesCount - 1 : p.likesCount + 1, isLikedByMe: !p.isLikedByMe } : p));
-  };
-
   const handleCommentSubmissionPipeline = (targetPostId, commentTextValue) => {
     if (!commentTextValue || !commentTextValue.trim()) return;
     setFeedPosts(prev => prev.map(p => p.id === targetPostId ? { ...p, comments: [...p.comments, { id: `comment-node-id-${Date.now()}`, authorName: activeUserProfileRecord.fullName, timestamp: Date.now(), text: commentTextValue.trim() }] } : p));
@@ -495,7 +491,7 @@ export default function SnapFeedMonolithicEngine() {
                     </div>
                   )}
                   <div className="flex items-center gap-6 pt-2 border-t border-slate-800/50">
-                    <SnapFeedReactionSubsystem language={currentSystemLanguage} postId={post.id} onReaction={() => {}} />
+                    <SnapFeedReactionCSS language={currentSystemLanguage} postId={post.id} onReaction={() => {}} />
                     <button className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
                       <span>💬</span>
                       <span>{UI_VOCABULARY.feedEngagementCommentLabel} ({post.comments.length})</span>
