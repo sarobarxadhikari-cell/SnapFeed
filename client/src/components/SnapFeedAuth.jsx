@@ -257,8 +257,35 @@ export default function SnapFeedMonolithicEngine() {
       setCurrentUserId(userId);
       const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
       socket.emit('register_user', userId);
+      socket.on('receive_message', (msg) => {
+        const senderName = msg.sender?.fullName || 'Someone';
+        const preview = msg.text?.length > 30 ? msg.text.substring(0, 30) + '...' : msg.text;
+        triggerNotification(`💬 ${senderName}: ${preview}`);
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const o1 = ctx.createOscillator();
+          const o2 = ctx.createOscillator();
+          const g = ctx.createGain();
+          o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+          o1.type = 'sine'; o2.type = 'sine';
+          o1.frequency.setValueAtTime(880, ctx.currentTime);
+          o2.frequency.setValueAtTime(1320, ctx.currentTime + 0.06);
+          o1.frequency.setValueAtTime(1100, ctx.currentTime + 0.12);
+          g.gain.setValueAtTime(0.6, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+          o1.start(ctx.currentTime); o2.start(ctx.currentTime + 0.06);
+          o1.stop(ctx.currentTime + 0.35); o2.stop(ctx.currentTime + 0.4);
+          const o3 = ctx.createOscillator(); const g2 = ctx.createGain();
+          o3.connect(g2); g2.connect(ctx.destination);
+          o3.type = 'sine';
+          o3.frequency.setValueAtTime(1760, ctx.currentTime + 0.12);
+          g2.gain.setValueAtTime(0.4, ctx.currentTime + 0.12);
+          g2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          o3.start(ctx.currentTime + 0.12); o3.stop(ctx.currentTime + 0.4);
+        } catch {}
+      });
       socketRef.current = socket;
-      return () => socket.disconnect();
+      return () => { socket.off('receive_message'); socket.disconnect(); };
     }
   }, []);
 
