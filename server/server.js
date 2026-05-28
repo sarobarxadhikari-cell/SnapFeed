@@ -99,6 +99,38 @@ serverApp.post('/api/v1/auth/login', accessControlLimiter, async (req, res) => {
   }
 });
 
+// Registration Route
+serverApp.post('/api/v1/auth/register', async (req, res) => {
+  try {
+    const { firstname, surname, contact, password, gender } = req.body;
+    if (!firstname || !surname || !contact || !password) {
+      return res.status(400).json({ status: "fail", message: "Required registration fields missing from payload package." });
+    }
+    const cleanContact = contact.trim().toLowerCase();
+    const exists = userPersistenceDatabase.find(u => u.email.toLowerCase() === cleanContact);
+    if (exists) {
+      return res.status(409).json({ status: "fail", message: "Identity endpoint already registered in system ledger." });
+    }
+    const passwordHash = await bcrypt.hash(password, 12);
+    const newUser = {
+      uid: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      handle: cleanContact.split('@')[0],
+      email: cleanContact,
+      passwordHash,
+      name: `${firstname} ${surname}`,
+      gender: gender || 'private',
+      createdAt: new Date().toISOString()
+    };
+    userPersistenceDatabase.push(newUser);
+    const token = jwt.sign({ sub: newUser.uid, usr: newUser.handle }, TOKEN_SIGNING_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
+    res.setHeader('Set-Cookie', `__Secure-SnapFeedAuth=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`);
+    return res.status(201).json({ status: "success", user: { name: newUser.name, handle: newUser.handle } });
+  } catch (err) {
+    console.error("Registration pipeline failure:", err);
+    return res.status(500).json({ status: "error", message: "Server degradation event caught inside registration pipeline." });
+  }
+});
+
 // Health check
 serverApp.get('/api/v1/health', (req, res) => {
   res.json({ status: "ok", service: "SnapFeed Security Engine", timestamp: new Date().toISOString() });
