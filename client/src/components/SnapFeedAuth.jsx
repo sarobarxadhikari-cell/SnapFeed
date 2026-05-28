@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SnapFeedReactionCSS from './SnapFeedReactionCSS';
+import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -466,9 +467,9 @@ export default function SnapFeedMonolithicEngine() {
         </main>
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
-        <main className="relative z-10 max-w-7xl w-full mx-auto px-4 py-6 flex-1 flex gap-6">
-          {/* Feed Column */}
-          <div className="flex-1 max-w-2xl mx-auto space-y-6">
+        <div className="relative z-10 flex-1 flex">
+          <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} />
+          <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 space-y-6 overflow-y-auto">
             {/* Top Bar */}
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-bold text-white">{UI_VOCABULARY.newsFeedTabTitle}</h1>
@@ -575,8 +576,9 @@ export default function SnapFeedMonolithicEngine() {
                 ))}
               </div>
             </div>
-          </div>
+          </div> {/* right sidebar end */}
         </main>
+        </div> {/* sidebar+feed flex container end */}
       )}
 
       {/* Footer (only show in auth mode) */}
