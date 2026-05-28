@@ -1,0 +1,7 @@
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
+  "buildCommand": "cd client && npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "",
+  "framework": "vite"
+}
