@@ -5,6 +5,7 @@ import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
 import SnapFeedLiveMap from './SnapFeedLiveMap';
 import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
 import SnapFeedMessenger from './SnapFeedMessenger';
+import SnapFeedActionIcons from './SnapFeedActionIcons';
 
 const BASE_INTERFACE_VOCABULARY = {
   en: {
@@ -494,10 +495,7 @@ export default function SnapFeedMonolithicEngine() {
               <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-bold text-white">{UI_VOCABULARY.newsFeedTabTitle}</h1>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{activeUserProfileRecord.avatarInitialString}</div>
-                <button onClick={() => { setInputLoginUserIdentity(''); setInputLoginAccountSecret(''); setActiveWorkflowPanel('credentialsLogin'); }} className="text-[10px] text-slate-500 hover:text-white transition">Logout</button>
-              </div>
+              <SnapFeedActionIcons />
             </div>
 
             <SnapFeedStoriesComposer />
