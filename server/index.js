@@ -448,6 +448,36 @@ app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
+app.post('/api/conversation/create', authMiddleware, async (req, res) => {
+  try {
+    const { participantId } = req.body;
+    let conversation = await Conversation.findOne({ participants: { $all: [req.userId, participantId] } });
+    if (!conversation) conversation = await Conversation.create({ participants: [req.userId, participantId] });
+    const populated = await Conversation.findById(conversation._id).populate('participants', 'fullName profilePic avatar');
+    res.json({ success: true, conversation: populated });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/conversations', authMiddleware, async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ participants: req.userId })
+      .populate('participants', 'fullName profilePic avatar isOnline')
+      .populate('lastMessage')
+      .sort({ updatedAt: -1 });
+    res.json({ success: true, conversations });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/messages/:conversationId', authMiddleware, async (req, res) => {
+  try {
+    const messages = await Message.find({ conversationId: req.params.conversationId })
+      .populate('sender', 'fullName profilePic avatar')
+      .populate('replyTo')
+      .sort({ createdAt: 1 });
+    res.json({ success: true, messages });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/health', (req, res) => { res.json({ status: 'ok', online: onlineUsers.size, timestamp: new Date().toISOString() }); });
 
 mongoose.connect(process.env.MONGO_URI)
