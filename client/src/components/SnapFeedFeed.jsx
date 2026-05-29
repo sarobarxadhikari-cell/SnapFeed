@@ -304,7 +304,12 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
 
       {/* OVERLAYS */}
       <AnimatePresence>
-        {showSearch && <SnapFeedSearchProfile token={token} currentUserId={currentUserId} onClose={() => setShowSearch(false)} onMessageUser={(userId) => { setShowSearch(false); }} />}
+        {showSearch && <SnapFeedSearchProfile token={token} currentUserId={currentUserId} onClose={() => setShowSearch(false)} onMessageUser={(userId) => { setShowSearch(false); }} onViewProfile={(action) => {
+          if (action.action === 'send_friend_request' && socket) {
+            socket.emit('send_friend_request', { senderId: currentUserId, receiverId: action.receiverId });
+            addNotification(`Friend request sent!`);
+          }
+        }} />}
         {showFriends && <SnapFeedFriends token={token} onClose={() => setShowFriends(false)} />}
         {showMessenger && <SnapFeedMessenger token={token} currentUserId={currentUserId} socket={socket} onClose={() => setShowMessenger(false)} onVideoCall={(user) => setActiveVideoCall({ targetUser: user, isIncoming: false })} autoOpen={true} />}
       </AnimatePresence>
