@@ -790,68 +790,6 @@ export default function SnapFeedMonolithicEngine() {
           userRecord={activeUserProfileRecord}
         />
       )}
-            {feedPosts.map(post => (
-              <motion.div key={post.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 border border-slate-800/60 rounded-2xl overflow-hidden">
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">{post.authorName.charAt(0)}</div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{post.authorName}</p>
-                        <p className="text-[10px] text-slate-500">@{post.authorHandle} · {formatTime(post.timestamp)}</p>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <button onClick={() => setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)} className="text-slate-500 hover:text-white text-lg">⋯</button>
-                      {activeMenuPostId === post.id && (
-                        <div className="absolute right-0 top-6 bg-slate-900 border border-slate-800 rounded-xl p-2 min-w-[160px] shadow-xl z-20">
-                          <button onClick={() => { triggerNotification("Report sent."); setActiveMenuPostId(null); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuReportEntry}</button>
-                          <button onClick={() => { setFeedPosts(prev => prev.filter(p => p.id !== post.id)); setActiveMenuPostId(null); triggerNotification("Post hidden."); }} className="w-full text-left px-3 py-2 text-[10px] text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">{UI_VOCABULARY.actionMenuHideEntry}</button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-200 leading-relaxed">{post.contentBody}</p>
-                  {post.contentImage && (
-                    <div className="rounded-xl overflow-hidden bg-slate-950">
-                      <img src={post.contentImage} alt="" className="w-full h-48 object-cover" onError={(e) => e.target.style.display='none'} />
-                    </div>
-                  )}
-                  <div className="flex items-center gap-6 pt-2 border-t border-slate-800/50">
-                    <SnapFeedReactionCSS language={currentSystemLanguage} postId={post.id} onReaction={() => {}} />
-                    <button className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
-                      <span>💬</span>
-                      <span>{UI_VOCABULARY.feedEngagementCommentLabel} ({post.comments.length})</span>
-                    </button>
-                    <button onClick={() => { navigator.clipboard?.writeText(window.location.href); triggerNotification("Link copied."); }} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-white transition">
-                      <span>↗️</span>
-                      <span>{UI_VOCABULARY.feedEngagementShareLabel}</span>
-                    </button>
-                  </div>
-                  {/* Comments */}
-                  {post.comments.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-slate-800/30">
-                      {post.comments.map(c => (
-                        <div key={c.id} className="flex items-start gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-white text-[8px] font-bold shrink-0 mt-0.5">{c.authorName.charAt(0)}</div>
-                          <div className="bg-slate-950 rounded-xl px-3 py-2 flex-1">
-                            <p className="text-[10px] font-semibold text-blue-400">{c.authorName}</p>
-                            <p className="text-xs text-slate-300 mt-0.5">{c.text}</p>
-                            <p className="text-[9px] text-slate-600 mt-1">{formatTime(c.timestamp)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {/* Comment Input */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <input type="text" value={activeCommentInput[post.id] || ''} onChange={(e) => setActiveCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleCommentSubmissionPipeline(post.id, activeCommentInput[post.id]); } }} className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition placeholder-slate-600" placeholder={UI_VOCABULARY.commentInputBoxPlaceholder} />
-                    <button onClick={() => handleCommentSubmissionPipeline(post.id, activeCommentInput[post.id])} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-xl transition">{UI_VOCABULARY.btnSubmitCommentToPost}</button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-      )}
 
       {/* Footer (only show in auth mode) */}
       {activeWorkflowPanel !== 'appNewsFeedDashboard' && (
