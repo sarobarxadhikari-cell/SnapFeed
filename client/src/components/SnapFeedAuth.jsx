@@ -885,9 +885,13 @@ export default function SnapFeedMonolithicEngine() {
           <div className="hidden lg:block w-[380px] shrink-0">
             <div className="sticky top-6">
               {isMessengerOpen && (
-                <div className="transition-all duration-300">
-                  <SnapFeedMessenger users={simulatedOnlineUsersDirectory} activeUser={activeUserProfileRecord} />
-                </div>
+                <SnapFeedMessenger
+                  token={localStorage.getItem('sf_token')}
+                  currentUserId={currentUserId}
+                  socket={socketRef.current}
+                  onClose={() => setIsMessengerOpen(false)}
+                  onVideoCall={(user) => setActiveVideoCall({ targetUser: user, isIncoming: false })}
+                />
               )}
             </div>
           </div>
