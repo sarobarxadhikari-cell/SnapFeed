@@ -156,12 +156,7 @@ export default function SnapFeedMessageBox({ token, currentUserId, socket, onClo
               <p className="text-xs font-bold text-white">{activeChat.fullName}</p>
               <p className="text-[10px] text-slate-500">Online</p>
             </div>
-            <button onClick={() => {
-              if (socket) {
-                socket.emit('call_offer', { to: activeChat._id, offer: { initiating: true }, from: currentUserId });
-              }
-              if (onStartVideoCall) onStartVideoCall(activeChat);
-            }} className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center transition">
+            <button onClick={() => { if (onStartVideoCall) onStartVideoCall(activeChat); }} className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center transition">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
             </button>
             <button onClick={() => { setActiveChat(null); setChatMessages([]); }} className="text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-full">✕</button>
