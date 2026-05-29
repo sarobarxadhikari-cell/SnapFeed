@@ -38,7 +38,7 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
     return res.json();
   };
 
-  useEffect(() => { loadData(); checkPendingRequests(); }, []);
+  useEffect(() => { loadData(); }, []);
 
   const checkPendingRequests = async () => {
     try {
@@ -85,6 +85,7 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
       { id: '1', author: { fullName: 'SnapFeed Official', avatar: '' }, text: 'Welcome to SnapFeed! The ultimate social platform 🔥', likes: 1247, comments: 89, shares: 23, createdAt: new Date().toISOString() },
       { id: '2', author: { fullName: 'Community', avatar: '' }, text: 'Share your moments with friends and family. Real-time messaging, video calls, and more!', likes: 892, comments: 45, shares: 12, createdAt: new Date().toISOString() }
     ]);
+    checkPendingRequests();
   };
 
   const loadConversations = async () => {
