@@ -788,6 +788,7 @@ export default function SnapFeedMonolithicEngine() {
           currentUserId={currentUserId}
           socket={socketRef.current}
           userRecord={activeUserProfileRecord}
+          onLogout={() => { localStorage.removeItem('sf_token'); setActiveWorkflowPanel('credentialsLogin'); setCurrentUserId(''); setActiveUserProfileRecord({}); }}
         />
       )}
 

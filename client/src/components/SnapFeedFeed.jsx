@@ -9,12 +9,13 @@ import SnapFeedLeftSidebar from './SnapFeedLeftSidebar';
 
 const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
-export default function SnapFeedFeed({ token, currentUserId, socket, userRecord }) {
+export default function SnapFeedFeed({ token, currentUserId, socket, userRecord, onLogout }) {
   const [selectedMenu, setSelectedMenu] = useState('Home');
   const [showMessenger, setShowMessenger] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [likedPosts, setLikedPosts] = useState([]);
@@ -153,8 +154,24 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord 
           <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => setShowNotifications(!showNotifications)} className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:text-white">
             <Bell size={17} />
           </motion.button>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-xs font-bold cursor-pointer overflow-hidden border-2 border-slate-700">
-            {userRecord.avatarInitialString || 'U'}
+          <div className="relative">
+            <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => setShowProfile(!showProfile)} className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-xs font-bold cursor-pointer overflow-hidden border-2 border-slate-700">
+              {userRecord.avatarInitialString || 'U'}
+            </motion.button>
+            <AnimatePresence>
+              {showProfile && (
+                <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="p-3 border-b border-slate-800">
+                    <p className="text-xs font-bold text-white">{userRecord.fullName || 'User'}</p>
+                    <p className="text-[10px] text-slate-500">@{userRecord.accountHandle || 'user'}</p>
+                  </div>
+                  <button onClick={() => { setShowProfile(false); if (onLogout) onLogout(); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                    Logout
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
