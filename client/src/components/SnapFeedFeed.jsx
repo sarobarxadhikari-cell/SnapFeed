@@ -38,7 +38,16 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
     return res.json();
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); checkPendingRequests(); }, []);
+
+  const checkPendingRequests = async () => {
+    try {
+      const data = await apiFetch(`${API_BASE_URL}/api/friends/requests`);
+      if (data.received && data.received.length > 0) {
+        setFriendRequestPopup(data.received[0]);
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -57,7 +66,7 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
       addNotification(`👤 ${data.sender?.fullName || 'Someone'} sent you a friend request`);
     });
     socket.on('friend_request_accepted', (data) => {
-      addNotification(`✅ ${data.friendId || 'Someone'} accepted your friend request`);
+      addNotification(`✅ Friend request accepted!`);
       playNotifSound();
       loadData();
     });
