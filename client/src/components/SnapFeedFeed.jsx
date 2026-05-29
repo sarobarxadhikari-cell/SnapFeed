@@ -304,10 +304,14 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
 
       {/* OVERLAYS */}
       <AnimatePresence>
-        {showSearch && <SnapFeedSearchProfile token={token} currentUserId={currentUserId} onClose={() => setShowSearch(false)} onMessageUser={(userId) => { setShowSearch(false); }} onViewProfile={(action) => {
-          if (action.action === 'send_friend_request' && socket) {
-            socket.emit('send_friend_request', { senderId: currentUserId, receiverId: action.receiverId });
-            addNotification(`Friend request sent!`);
+        {showSearch && <SnapFeedSearchProfile token={token} currentUserId={currentUserId} onClose={() => setShowSearch(false)} onMessageUser={(userId) => { setShowSearch(false); }} onViewProfile={async (action) => {
+          if (action.action === 'send_friend_request') {
+            try {
+              await apiFetch(`${API_BASE_URL}/api/friends/request`, { method: 'POST', body: JSON.stringify({ receiverId: action.receiverId }) });
+              addNotification('Friend request sent!');
+              playNotifSound();
+            } catch {}
+            if (socket) socket.emit('send_friend_request', { senderId: currentUserId, receiverId: action.receiverId });
           }
         }} />}
         {showFriends && <SnapFeedFriends token={token} onClose={() => setShowFriends(false)} />}
