@@ -254,65 +254,36 @@ export default function SnapFeedMonolithicEngine() {
 
   useEffect(() => {
     const token = localStorage.getItem('sf_token');
-    if (token) {
-      const userId = decodeTokenUserId(token);
-      setCurrentUserId(userId);
-      const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
-      socket.emit('register_user', userId);
-      socket.on('receive_message', (msg) => {
-        const senderName = msg.sender?.fullName || 'Someone';
-        const preview = msg.text?.length > 30 ? msg.text.substring(0, 30) + '...' : msg.text;
-        triggerNotification(`💬 ${senderName}: ${preview}`);
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const o1 = ctx.createOscillator();
-          const o2 = ctx.createOscillator();
-          const g = ctx.createGain();
-          o1.connect(g); o2.connect(g); g.connect(ctx.destination);
-          o1.type = 'sine'; o2.type = 'sine';
-          o1.frequency.setValueAtTime(880, ctx.currentTime);
-          o2.frequency.setValueAtTime(1320, ctx.currentTime + 0.06);
-          o1.frequency.setValueAtTime(1100, ctx.currentTime + 0.12);
-          g.gain.setValueAtTime(0.6, ctx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-          o1.start(ctx.currentTime); o2.start(ctx.currentTime + 0.06);
-          o1.stop(ctx.currentTime + 0.35); o2.stop(ctx.currentTime + 0.4);
-          const o3 = ctx.createOscillator(); const g2 = ctx.createGain();
-          o3.connect(g2); g2.connect(ctx.destination);
-          o3.type = 'sine';
-          o3.frequency.setValueAtTime(1760, ctx.currentTime + 0.12);
-          g2.gain.setValueAtTime(0.4, ctx.currentTime + 0.12);
-          g2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-          o3.start(ctx.currentTime + 0.12); o3.stop(ctx.currentTime + 0.4);
-        } catch {}
-      });
-
-      socket.on('call_offer', async ({ offer, from }) => {
-        const fromUser = await apiFetch(`${API_BASE_URL}/api/users/profile/${from}`);
-        if (fromUser.user) {
-          setIncomingCall({ user: fromUser.user, offer });
-          try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const ringInterval = setInterval(() => {
-              const o1 = ctx.createOscillator();
-              const o2 = ctx.createOscillator();
-              const g = ctx.createGain();
-              o1.connect(g); o2.connect(g); g.connect(ctx.destination);
-              o1.type = 'sine'; o2.type = 'sine';
-              o1.frequency.setValueAtTime(440, ctx.currentTime);
-              o2.frequency.setValueAtTime(480, ctx.currentTime);
-              g.gain.setValueAtTime(0.5, ctx.currentTime);
-              g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-              o1.start(ctx.currentTime); o2.start(ctx.currentTime);
-              o1.stop(ctx.currentTime + 0.8); o2.stop(ctx.currentTime + 0.8);
-            }, 1000);
-            incomingCallRingRef.current = ringInterval;
-          } catch {}
-        }
-      });
-      socketRef.current = socket;
-      return () => { socket.off('receive_message'); socket.disconnect(); };
-    }
+    if (!token) return;
+    const userId = decodeTokenUserId(token);
+    let socket;
+    fetch(`${API_BASE_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.user) { localStorage.removeItem('sf_token'); setActiveWorkflowPanel('credentialsLogin'); return; }
+        setCurrentUserId(userId);
+        setActiveUserProfileRecord({ fullName: data.user.fullName, accountHandle: data.user.email, avatarInitialString: data.user.fullName?.charAt(0).toUpperCase() || 'U' });
+        socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+        socket.emit('register_user', userId);
+        socket.on('receive_message', (msg) => {
+          const senderName = msg.sender?.fullName || 'Someone';
+          const preview = msg.text?.length > 30 ? msg.text.substring(0, 30) + '...' : msg.text;
+          triggerNotification(`💬 ${senderName}: ${preview}`);
+          try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type = 'sine'; o.frequency.setValueAtTime(880, ctx.currentTime); g.gain.setValueAtTime(0.5, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2); o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.2); } catch {}
+        });
+        socket.on('call_offer', async ({ offer, from }) => {
+          const fromUser = await apiFetch(`${API_BASE_URL}/api/users/profile/${from}`);
+          if (fromUser.user) {
+            setIncomingCall({ user: fromUser.user, offer });
+            try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const interval = setInterval(() => { const o1 = ctx.createOscillator(); const o2 = ctx.createOscillator(); const g = ctx.createGain(); o1.connect(g); o2.connect(g); g.connect(ctx.destination); o1.type = 'sine'; o2.type = 'sine'; o1.frequency.setValueAtTime(440, ctx.currentTime); o2.frequency.setValueAtTime(480, ctx.currentTime); g.gain.setValueAtTime(0.5, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8); o1.start(ctx.currentTime); o2.start(ctx.currentTime); o1.stop(ctx.currentTime + 0.8); o2.stop(ctx.currentTime + 0.8); }, 1000); incomingCallRingRef.current = interval; } catch {}
+          }
+        });
+        socket.on('call_end', () => { clearInterval(incomingCallRingRef.current); setIncomingCall(null); });
+        socket.on('call_answer', () => { clearInterval(incomingCallRingRef.current); });
+        socketRef.current = socket;
+      })
+      .catch(() => { localStorage.removeItem('sf_token'); setActiveWorkflowPanel('credentialsLogin'); });
+    return () => { if (socket) { socket.off('receive_message'); socket.off('call_offer'); socket.off('call_end'); socket.off('call_answer'); socket.disconnect(); } };
   }, []);
 
   const apiFetch = async (url, options = {}, timeoutMs = 60000) => {
