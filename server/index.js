@@ -7,6 +7,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -20,9 +23,18 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'snapfeed_secret_2026';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ═══════════════════════════════════════════════
-// MONGOOSE SCHEMAS
-// ═══════════════════════════════════════════════
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage });
+
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
@@ -39,6 +51,9 @@ const userSchema = new mongoose.Schema({
   fromLocation: { type: String, default: '' },
   isProfileLocked: { type: Boolean, default: false },
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  profilePic: { type: String, default: '' },
+  isOnline: { type: Boolean, default: false },
+  lastSeen: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -48,24 +63,39 @@ const friendRequestSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' }
 }, { timestamps: true });
 
+const conversationSchema = new mongoose.Schema({
+  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],
+  lastMessage: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+  unreadCounts: { type: Map, of: Number, default: {} },
+  pinnedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+}, { timestamps: true });
+
 const messageSchema = new mongoose.Schema({
-  conversationId: { type: String, required: true },
+  conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', required: true },
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  text: { type: String, required: true },
-  isRead: { type: Boolean, default: false }
+  text: String,
+  images: [String],
+  files: [String],
+  voice: String,
+  replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+  reactions: [{
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    emoji: String
+  }],
+  seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  edited: { type: Boolean, default: false },
+  deletedForEveryone: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 const FriendRequest = mongoose.model('FriendRequest', friendRequestSchema);
+const Conversation = mongoose.model('Conversation', conversationSchema);
 const Message = mongoose.model('Message', messageSchema);
 
 friendRequestSchema.index({ sender: 1, receiver: 1 }, { unique: true });
 messageSchema.index({ conversationId: 1, createdAt: -1 });
 
-// ═══════════════════════════════════════════════
-// EMAIL SENDER (Resend)
-// ═══════════════════════════════════════════════
 const sendVerificationEmail = async (toEmail, code) => {
   try {
     await resend.emails.send({
@@ -80,9 +110,6 @@ const sendVerificationEmail = async (toEmail, code) => {
   }
 };
 
-// ═══════════════════════════════════════════════
-// AUTH MIDDLEWARE
-// ═══════════════════════════════════════════════
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -93,55 +120,103 @@ const authMiddleware = async (req, res, next) => {
   } catch { res.status(401).json({ error: 'Invalid token' }); }
 };
 
-// ═══════════════════════════════════════════════
-// SOCKET.IO REAL-TIME ENGINE
-// ═══════════════════════════════════════════════
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
-  socket.on('register_user', (userId) => {
+  socket.on('register_user', async (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.join(userId);
+    await User.findByIdAndUpdate(userId, { isOnline: true, lastSeen: new Date() });
     console.log(`User ${userId} online`);
   });
 
-  socket.on('send_message', async ({ senderId, receiverId, text }, callback) => {
+  socket.on('join-conversation', (conversationId) => {
+    socket.join(conversationId);
+  });
+
+  socket.on('typing', ({ conversationId, userId }) => {
+    socket.to(conversationId).emit('typing', { conversationId, userId });
+  });
+
+  socket.on('stop-typing', ({ conversationId, userId }) => {
+    socket.to(conversationId).emit('stop-typing', { conversationId, userId });
+  });
+
+  socket.on('send-message', async ({ conversationId, senderId, receiverId, text, images, files, voice, replyTo }, callback) => {
     try {
-      const conversationId = [senderId, receiverId].sort().join('_');
-      const msg = await Message.create({ conversationId, sender: senderId, receiver: receiverId, text });
-      const populated = await Message.findById(msg._id).populate('sender', 'fullName avatar');
-      io.to(receiverId).emit('receive_message', populated);
-      io.to(senderId).emit('message_sent_confirm', populated);
+      const msg = await Message.create({
+        conversationId,
+        sender: senderId,
+        receiver: receiverId,
+        text,
+        images: images || [],
+        files: files || [],
+        voice: voice || null,
+        replyTo: replyTo || null
+      });
+      await Conversation.findByIdAndUpdate(conversationId, { lastMessage: msg._id, $inc: { [`unreadCounts.${receiverId}`]: 1 } });
+      const populated = await Message.findById(msg._id).populate('sender', 'fullName avatar profilePic');
+      io.to(conversationId).emit('new-message', populated);
       if (callback) callback({ status: 'ok', msg: populated });
     } catch (err) {
       if (callback) callback({ status: 'error' });
     }
   });
 
-  socket.on('typing_start', ({ senderId, receiverId }) => {
-    io.to(receiverId).emit('user_typing', { userId: senderId });
+  socket.on('seen-message', async ({ conversationId, userId, messageIds }) => {
+    try {
+      await Message.updateMany({ _id: { $in: messageIds } }, { $addToSet: { seenBy: userId } });
+      await Conversation.findByIdAndUpdate(conversationId, { [`unreadCounts.${userId}`]: 0 });
+      io.to(conversationId).emit('message-seen', { conversationId, userId, messageIds });
+    } catch (err) { console.error(err); }
   });
 
-  socket.on('typing_stop', ({ senderId, receiverId }) => {
-    io.to(receiverId).emit('user_stop_typing', { userId: senderId });
+  socket.on('react-message', async ({ messageId, userId, emoji }) => {
+    try {
+      const msg = await Message.findById(messageId);
+      if (!msg) return;
+      const existing = msg.reactions.find(r => r.user.toString() === userId);
+      if (existing) {
+        if (existing.emoji === emoji) {
+          msg.reactions = msg.reactions.filter(r => r.user.toString() !== userId);
+        } else {
+          existing.emoji = emoji;
+        }
+      } else {
+        msg.reactions.push({ user: userId, emoji });
+      }
+      await msg.save();
+      io.to(msg.conversationId.toString()).emit('message-reacted', { messageId, reactions: msg.reactions });
+    } catch (err) { console.error(err); }
   });
 
-  socket.on('call_offer', ({ to, offer, from }) => {
-    io.to(to).emit('call_offer', { offer, from });
+  socket.on('delete-message', async ({ messageId, userId }) => {
+    try {
+      const msg = await Message.findById(messageId);
+      if (!msg) return;
+      if (msg.sender.toString() !== userId) return;
+      msg.deletedForEveryone = true;
+      await msg.save();
+      io.to(msg.conversationId.toString()).emit('message-deleted', { messageId });
+    } catch (err) { console.error(err); }
   });
 
-  socket.on('call_answer', ({ to, answer }) => {
-    io.to(to).emit('call_answer', { answer });
+  socket.on('call-user', ({ to, offer, from }) => {
+    io.to(to).emit('call-user', { offer, from });
   });
 
-  socket.on('ice_candidate', ({ to, candidate }) => {
-    io.to(to).emit('ice_candidate', { candidate });
+  socket.on('answer-call', ({ to, answer }) => {
+    io.to(to).emit('answer-call', { answer });
   });
 
-  socket.on('call_end', ({ to }) => {
-    io.to(to).emit('call_end');
+  socket.on('ice-candidate', ({ to, candidate }) => {
+    io.to(to).emit('ice-candidate', { candidate });
+  });
+
+  socket.on('end-call', ({ to }) => {
+    io.to(to).emit('end-call');
   });
 
   socket.on('send_friend_request', async ({ senderId, receiverId }) => {
@@ -149,7 +224,7 @@ io.on('connection', (socket) => {
       const exists = await FriendRequest.findOne({ sender: senderId, receiver: receiverId });
       if (exists) return;
       const newRequest = await FriendRequest.create({ sender: senderId, receiver: receiverId });
-      const senderData = await User.findById(senderId).select('fullName avatar');
+      const senderData = await User.findById(senderId).select('fullName avatar profilePic');
       io.to(receiverId).emit('notification_friend_request', { requestId: newRequest._id, sender: senderData });
     } catch (err) { console.error(err); }
   });
@@ -173,16 +248,17 @@ io.on('connection', (socket) => {
     } catch (err) { console.error(err); }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     for (const [userId, socketId] of onlineUsers.entries()) {
-      if (socketId === socket.id) { onlineUsers.delete(userId); break; }
+      if (socketId === socket.id) {
+        onlineUsers.delete(userId);
+        await User.findByIdAndUpdate(userId, { isOnline: false, lastSeen: new Date() });
+        break;
+      }
     }
   });
 });
 
-// ═══════════════════════════════════════════════
-// AUTH ROUTES
-// ═══════════════════════════════════════════════
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -248,7 +324,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 
 app.put('/api/auth/profile', authMiddleware, async (req, res) => {
   try {
-    const { fullName, username, dateOfBirth, bio, avatar, coverPhoto, studiedAt, fromLocation, isProfileLocked } = req.body;
+    const { fullName, username, dateOfBirth, bio, avatar, coverPhoto, studiedAt, fromLocation, isProfileLocked, profilePic } = req.body;
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (fullName) user.fullName = fullName;
@@ -260,8 +336,9 @@ app.put('/api/auth/profile', authMiddleware, async (req, res) => {
     if (studiedAt !== undefined) user.studiedAt = studiedAt;
     if (fromLocation !== undefined) user.fromLocation = fromLocation;
     if (isProfileLocked !== undefined) user.isProfileLocked = isProfileLocked;
+    if (profilePic !== undefined) user.profilePic = profilePic;
     await user.save();
-    res.json({ user: { id: user._id, fullName: user.fullName, email: user.email, username: user.username, dateOfBirth: user.dateOfBirth, bio: user.bio, avatar: user.avatar, coverPhoto: user.coverPhoto, studiedAt: user.studiedAt, fromLocation: user.fromLocation, isProfileLocked: user.isProfileLocked, isVerified: user.isVerified } });
+    res.json({ user: { id: user._id, fullName: user.fullName, email: user.email, username: user.username, dateOfBirth: user.dateOfBirth, bio: user.bio, avatar: user.avatar, coverPhoto: user.coverPhoto, studiedAt: user.studiedAt, fromLocation: user.fromLocation, isProfileLocked: user.isProfileLocked, isVerified: user.isVerified, profilePic: user.profilePic, isOnline: user.isOnline, lastSeen: user.lastSeen } });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -280,14 +357,11 @@ app.post('/api/auth/change-email', authMiddleware, async (req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
-// ═══════════════════════════════════════════════
-// USER SEARCH + PUBLIC PROFILE
-// ═══════════════════════════════════════════════
 app.get('/api/users/search', authMiddleware, async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.json({ users: [] });
-    const users = await User.find({ fullName: { $regex: q, $options: 'i' } }).select('fullName avatar bio username').limit(20);
+    const users = await User.find({ fullName: { $regex: q, $options: 'i' } }).select('fullName avatar bio username profilePic').limit(20);
     res.json({ users });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
@@ -295,7 +369,7 @@ app.get('/api/users/search', authMiddleware, async (req, res) => {
 app.get('/api/users/profile/:targetId', authMiddleware, async (req, res) => {
   try {
     const { targetId } = req.params;
-    const target = await User.findById(targetId).select('-password -verificationCode -verificationExpiry').populate('friends', 'fullName avatar');
+    const target = await User.findById(targetId).select('-password -verificationCode -verificationExpiry').populate('friends', 'fullName avatar profilePic');
     if (!target) return res.status(404).json({ error: 'User not found' });
     const currentUser = await User.findById(req.userId).select('friends');
     const isFriend = target.friends.some(f => f._id.toString() === req.userId);
@@ -308,26 +382,23 @@ app.get('/api/users/profile/:targetId', authMiddleware, async (req, res) => {
       if (received) requestStatus = 'received';
     }
     if (target.isProfileLocked && !isFriend && !isSelf) {
-      return res.json({ user: { _id: target._id, fullName: target.fullName, avatar: target.avatar, coverPhoto: target.coverPhoto, bio: target.bio, studiedAt: target.studiedAt, fromLocation: target.fromLocation, isProfileLocked: true, friends: target.friends.slice(0, 6) }, privacy: { isFriend: false, isSelf, requestStatus, canSeePosts: false } });
+      return res.json({ user: { _id: target._id, fullName: target.fullName, avatar: target.avatar, coverPhoto: target.coverPhoto, bio: target.bio, studiedAt: target.studiedAt, fromLocation: target.fromLocation, isProfileLocked: true, friends: target.friends.slice(0, 6), profilePic: target.profilePic }, privacy: { isFriend: false, isSelf, requestStatus, canSeePosts: false } });
     }
     res.json({ user: target, privacy: { isFriend, isSelf, requestStatus, canSeePosts: true } });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
-// ═══════════════════════════════════════════════
-// FRIEND REQUESTS
-// ═══════════════════════════════════════════════
 app.get('/api/friends/requests', authMiddleware, async (req, res) => {
   try {
-    const received = await FriendRequest.find({ receiver: req.userId, status: 'pending' }).populate('sender', 'fullName avatar bio');
-    const sent = await FriendRequest.find({ sender: req.userId, status: 'pending' }).populate('receiver', 'fullName avatar');
+    const received = await FriendRequest.find({ receiver: req.userId, status: 'pending' }).populate('sender', 'fullName avatar bio profilePic');
+    const sent = await FriendRequest.find({ sender: req.userId, status: 'pending' }).populate('receiver', 'fullName avatar profilePic');
     res.json({ received, sent });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
 app.get('/api/friends/list', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).populate('friends', 'fullName avatar bio username');
+    const user = await User.findById(req.userId).populate('friends', 'fullName avatar bio username profilePic');
     res.json({ friends: user.friends });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
@@ -369,46 +440,16 @@ app.delete('/api/friends/remove/:friendId', authMiddleware, async (req, res) => 
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
-// ═══════════════════════════════════════════════
-// MESSAGES
-// ═══════════════════════════════════════════════
-app.get('/api/messages/:otherUserId', authMiddleware, async (req, res) => {
+app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
   try {
-    const conversationId = [req.userId, req.params.otherUserId].sort().join('_');
-    const messages = await Message.find({ conversationId }).populate('sender', 'fullName avatar').sort({ createdAt: 1 }).limit(100);
-    res.json({ messages });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl, filename: req.file.filename });
   } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
-app.get('/api/messages', authMiddleware, async (req, res) => {
-  try {
-    const conversations = await Message.aggregate([
-      { $match: { $or: [{ sender: new mongoose.Types.ObjectId(req.userId) }, { receiver: new mongoose.Types.ObjectId(req.userId) }] } },
-      { $sort: { createdAt: -1 } },
-      { $group: { _id: '$conversationId', lastMessage: { $first: '$$ROOT' } } },
-      { $limit: 50 }
-    ]);
-    const populated = await Message.populate(conversations, { path: 'lastMessage.sender', model: 'User', select: 'fullName avatar' });
-    await Message.populate(populated, { path: 'lastMessage.receiver', model: 'User', select: 'fullName avatar' });
-    res.json({ conversations: populated });
-  } catch { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.put('/api/messages/read/:otherUserId', authMiddleware, async (req, res) => {
-  try {
-    await Message.updateMany({ sender: req.params.otherUserId, receiver: req.userId, isRead: false }, { isRead: true });
-    res.json({ message: 'Messages marked as read' });
-  } catch { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ═══════════════════════════════════════════════
-// HEALTH CHECK
-// ═══════════════════════════════════════════════
 app.get('/api/health', (req, res) => { res.json({ status: 'ok', online: onlineUsers.size, timestamp: new Date().toISOString() }); });
 
-// ═══════════════════════════════════════════════
-// START SERVER
-// ═══════════════════════════════════════════════
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => { console.log('Connected to MongoDB'); server.listen(PORT, () => console.log(`Server running on port ${PORT}`)); })
   .catch(err => { console.error('MongoDB error:', err); process.exit(1); });
