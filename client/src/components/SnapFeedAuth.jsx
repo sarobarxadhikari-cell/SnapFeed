@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import SnapFeedReactionCSS from './SnapFeedReactionCSS';
 import SnapFeedUnifiedSidebar from './SnapFeedUnifiedSidebar';
+import SnapFeedFeed from './SnapFeedFeed';
 import SnapFeedLiveMap from './SnapFeedLiveMap';
 import SnapFeedStoriesComposer from './SnapFeedStoriesComposer';
 import SnapFeedMessenger from './SnapFeedMessenger';
@@ -782,27 +783,13 @@ export default function SnapFeedMonolithicEngine() {
         </main>
       ) : (
         /* ─── NEWS FEED DASHBOARD VIEW ─── */
-        <div className="relative z-10 flex flex-col flex-1">
-          <SnapFeedUnifiedHeader onChatClick={() => setIsMessengerOpen(!isMessengerOpen)} isChatActive={isMessengerOpen} onProfileClick={() => openProfileSettings()} onSearchClick={() => setShowSearchPanel(true)} onFriendsClick={() => setShowFriendsPanel(true)} />
-          <div className="flex flex-1">
-          <SnapFeedUnifiedSidebar language={currentSystemLanguage} activeUserInitial={activeUserProfileRecord.avatarInitialString} onNavigate={handleSidebarNavigate} />
-          <main className="flex-1 max-w-[700px] w-full mx-auto px-4 pt-2 pb-6 overflow-y-auto">
-            {feedView === 'map' ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-lg font-bold text-white">Active Connections</h1>
-                  <button onClick={() => setFeedView('feed')} className="text-[10px] text-slate-500 hover:text-white transition">← Back to Feed</button>
-                </div>
-                <SnapFeedLiveMap language={currentSystemLanguage} />
-              </div>
-            ) : (
-              <div className="space-y-6">
-            <SnapFeedStoriesComposer />
-
-            {/* Feed Posts */}
-            {feedPosts.length === 0 && (
-              <div className="text-center py-12"><p className="text-sm text-slate-500">{UI_VOCABULARY.emptyFeedFallbackNotification}</p></div>
-            )}
+        <SnapFeedFeed
+          token={localStorage.getItem('sf_token')}
+          currentUserId={currentUserId}
+          socket={socketRef.current}
+          userRecord={activeUserProfileRecord}
+        />
+      )}
             {feedPosts.map(post => (
               <motion.div key={post.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 border border-slate-800/60 rounded-2xl overflow-hidden">
                 <div className="p-5 space-y-3">
@@ -864,40 +851,6 @@ export default function SnapFeedMonolithicEngine() {
                 </div>
               </motion.div>
             ))}
-              </div>
-            )}
-
-            {/* System Log Terminal Footer */}
-            <div className="bg-slate-900/50 border border-slate-800/40 rounded-3xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">COMPOSER EVENT STREAM LOGS</h3>
-                <span className="text-[9px] text-slate-700 font-mono">CACHE: {(Array.from({length:220},(_,i)=>i).reduce((a,b)=>a+Math.floor(Math.random()*6400)+2000,0)/1024).toFixed(2)} KB</span>
-              </div>
-              <div className="bg-slate-950 rounded-2xl p-3 space-y-1 max-h-28 overflow-y-auto font-mono" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e293b #0f172a' }}>
-                {Array.from({ length: 6 }, (_, i) => (
-                  <p key={i} className="text-[9px] text-slate-600 leading-relaxed">[{i + 1}] [CORE COMPILER] Synced Feed Data Node sf_feed_stream_cluster_{55000 + i}. Execution latency: {(Math.random() * 9.5 + 0.4).toFixed(2)}ms</p>
-                ))}
-              </div>
-            </div>
-          </main>
-
-          {/* Right Sidebar - Messenger Toggle */}
-          <div className="hidden lg:block w-[380px] shrink-0">
-            <div className="sticky top-6">
-            </div>
-          </div>
-        </div>
-
-      {isMessengerOpen && (
-        <SnapFeedMessenger
-          token={localStorage.getItem('sf_token')}
-          currentUserId={currentUserId}
-          socket={socketRef.current}
-          onClose={() => setIsMessengerOpen(false)}
-          onVideoCall={(user) => setActiveVideoCall({ targetUser: user, isIncoming: false })}
-        />
-      )}
-      </div>
       )}
 
       {/* Footer (only show in auth mode) */}
