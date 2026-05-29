@@ -246,7 +246,7 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord 
       <AnimatePresence>
         {showSearch && <SnapFeedSearchProfile token={token} currentUserId={currentUserId} onClose={() => setShowSearch(false)} onMessageUser={(userId) => { setShowSearch(false); }} />}
         {showFriends && <SnapFeedFriends token={token} onClose={() => setShowFriends(false)} />}
-        {showMessenger && <SnapFeedMessenger token={token} currentUserId={currentUserId} socket={socket} onClose={() => setShowMessenger(false)} onVideoCall={(user) => setActiveVideoCall({ targetUser: user, isIncoming: false })} />}
+        {showMessenger && <SnapFeedMessenger token={token} currentUserId={currentUserId} socket={socket} onClose={() => setShowMessenger(false)} onVideoCall={(user) => setActiveVideoCall({ targetUser: user, isIncoming: false })} autoOpen={true} />}
       </AnimatePresence>
 
       {activeVideoCall && <SnapFeedVideoCall socket={socket} currentUserId={currentUserId} targetUser={activeVideoCall.targetUser} isIncoming={false} onEndCall={() => setActiveVideoCall(null)} />}

@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
-export default function SnapFeedMessenger({ token, currentUserId, socket, onClose, onVideoCall }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function SnapFeedMessenger({ token, currentUserId, socket, onClose, onVideoCall, autoOpen }) {
+  const [isOpen, setIsOpen] = useState(autoOpen || false);
   const [minimized, setMinimized] = useState(false);
   const [fullPanel, setFullPanel] = useState(false);
   const [activeChat, setActiveChat] = useState(null);
