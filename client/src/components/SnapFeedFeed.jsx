@@ -120,7 +120,7 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord 
     <div className="min-h-screen bg-[#020617] text-white overflow-hidden">
 
       {/* NAVBAR */}
-      <div className="fixed top-0 left-0 right-0 h-[70px] z-50 border-b border-white/10 bg-black/20 backdrop-blur-3xl flex items-center justify-between px-5">
+      <div className="fixed top-0 left-0 right-0 h-[70px] z-50 border-b border-white/10 bg-[#0f172a]/95 backdrop-blur-3xl flex items-center justify-between px-5">
         <div className="flex items-center gap-4">
           <motion.div whileHover={{ scale: 1.1, rotate: 10 }} className="w-12 h-12 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xl shadow-2xl cursor-pointer">SF</motion.div>
           <div className="w-[280px] h-11 rounded-full bg-white/10 border border-white/10 flex items-center gap-3 px-4">
@@ -133,9 +133,9 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord 
           {topMenus.map((menu, i) => {
             const Icon = menu.icon;
             return (
-              <motion.button key={i} whileHover={{ y: -3, scale: 1.05 }} whileTap={{ scale: 0.92 }} onClick={() => setSelectedMenu(menu.name)} className={`relative w-[65px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-300 ${selectedMenu === menu.name ? 'bg-blue-500 text-white shadow-2xl shadow-blue-500/30' : 'bg-white/5 hover:bg-white/10 text-slate-400'}`}>
+                <motion.button key={i} whileHover={{ y: -3, scale: 1.05 }} whileTap={{ scale: 0.92 }} onClick={() => setSelectedMenu(menu.name)} className={`relative w-[65px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-300 border-none outline-none ${selectedMenu === menu.name ? 'bg-blue-500/15 text-blue-500' : 'bg-white/5 hover:bg-white/10 text-slate-400'}`}>
                 <Icon size={22} />
-                {selectedMenu === menu.name && <motion.div layoutId="activeTab" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white" />}
+                {selectedMenu === menu.name && <motion.div layoutId="activeTab" className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full bg-blue-400" />}
               </motion.button>
             );
           })}
