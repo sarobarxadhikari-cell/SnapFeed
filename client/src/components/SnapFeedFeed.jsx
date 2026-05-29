@@ -5,6 +5,7 @@ import SnapFeedMessenger from './SnapFeedMessenger';
 import SnapFeedSearchProfile from './SnapFeedSearchProfile';
 import SnapFeedFriends from './SnapFeedFriends';
 import SnapFeedVideoCall from './SnapFeedVideoCall';
+import SnapFeedLeftSidebar from './SnapFeedLeftSidebar';
 
 const API_BASE_URL = 'https://snapfeed-1.onrender.com';
 
@@ -161,43 +162,7 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord 
       <div className="pt-[85px] flex">
 
         {/* LEFT SIDEBAR */}
-        <div className="w-[280px] h-screen sticky top-[85px] overflow-y-auto px-3 pb-20 hidden lg:block flex-shrink-0">
-          <motion.button whileHover={{ x: 5 }} className="w-full h-14 rounded-2xl hover:bg-white/5 flex items-center gap-3 px-3 mb-1">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-xs font-bold">{userRecord.avatarInitialString || 'U'}</div>
-            <div className="text-left"><h3 className="text-sm font-bold truncate">{userRecord.fullName || 'User'}</h3></div>
-          </motion.button>
-
-          {mainMenus.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.button key={i} whileHover={{ x: 5, scale: 1.01 }} whileTap={{ scale: 0.97 }} className="w-full h-12 rounded-2xl hover:bg-white/5 flex items-center gap-3 px-3 mb-1 transition-all">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center"><Icon size={16} /></div>
-                <span className="text-sm font-medium">{item.name}</span>
-              </motion.button>
-            );
-          })}
-
-          <motion.button whileHover={{ x: 5 }} whileTap={{ scale: 0.97 }} onClick={() => setShowMore(!showMore)} className="w-full h-12 rounded-2xl hover:bg-white/5 flex items-center gap-3 px-3 mt-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center"><ChevronRight size={16} className={`transition-all duration-300 ${showMore ? 'rotate-90' : ''}`} /></div>
-            <span className="text-sm font-medium">See More</span>
-          </motion.button>
-
-          <AnimatePresence>
-            {showMore && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                {hiddenMenus.map((item, i) => {
-                  const Icon = item.icon;
-                  return (
-                    <motion.button key={i} whileHover={{ x: 6, scale: 1.01 }} className="w-full h-12 rounded-2xl hover:bg-white/5 flex items-center gap-3 px-3 mb-1 transition-all">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center"><Icon size={16} /></div>
-                      <span className="text-sm font-medium">{item.name}</span>
-                    </motion.button>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <SnapFeedLeftSidebar userRecord={userRecord} showMore={showMore} setShowMore={setShowMore} />
 
         {/* CENTER FEED */}
         <div className="flex-1 max-w-[700px] mx-auto px-4 pb-20">
