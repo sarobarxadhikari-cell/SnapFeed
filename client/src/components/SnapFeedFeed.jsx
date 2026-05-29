@@ -43,10 +43,13 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
   const checkPendingRequests = async () => {
     try {
       const data = await apiFetch(`${API_BASE_URL}/api/friends/requests`);
+      console.log('PENDING REQUESTS:', data);
       if (data.received && data.received.length > 0) {
+        console.log('SETTING POPUP:', data.received[0]);
         setFriendRequestPopup(data.received[0]);
+        playNotifSound();
       }
-    } catch {}
+    } catch (e) { console.log('CHECK REQUESTS ERROR:', e); }
   };
 
   useEffect(() => {
