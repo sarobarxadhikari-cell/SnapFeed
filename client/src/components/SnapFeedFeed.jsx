@@ -25,12 +25,13 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
   const [stories, setStories] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [onlineCount, setOnlineCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
   const [activeVideoCall, setActiveVideoCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const incomingCallRingRef = useRef(null);
   const [conversations, setConversations] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [friendRequestPopup, setFriendRequestPopup] = useState(null);
 
   const apiFetch = async (url, options = {}) => {
     const res = await fetch(url, { ...options, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...options.headers } });
@@ -50,7 +51,17 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
     });
     socket.on('call_end', () => { clearInterval(incomingCallRingRef.current); setIncomingCall(null); });
     socket.on('call_answer', () => { clearInterval(incomingCallRingRef.current); });
-    return () => { socket.off('new-message'); socket.off('user-online'); socket.off('user-offline'); socket.off('call_offer'); socket.off('call_end'); socket.off('call_answer'); };
+    socket.on('notification_friend_request', (data) => {
+      setFriendRequestPopup(data);
+      playNotifSound();
+      addNotification(`👤 ${data.sender?.fullName || 'Someone'} sent you a friend request`);
+    });
+    socket.on('friend_request_accepted', (data) => {
+      addNotification(`✅ ${data.friendId || 'Someone'} accepted your friend request`);
+      playNotifSound();
+      loadData();
+    });
+    return () => { socket.off('new-message'); socket.off('user-online'); socket.off('user-offline'); socket.off('call_offer'); socket.off('call_end'); socket.off('call_answer'); socket.off('notification_friend_request'); socket.off('friend_request_accepted'); };
   }, [socket]);
 
   const loadData = async () => {
@@ -81,6 +92,29 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
 
   const toggleLike = (id) => { setLikedPosts(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]); };
   const toggleSave = (id) => { setSavedPosts(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]); };
+
+  const addNotification = (text) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, text }]);
+    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
+  };
+
+  const acceptFriendRequest = async (requestId) => {
+    try {
+      await apiFetch(`${API_BASE_URL}/api/friends/accept/${requestId}`, { method: 'PUT' });
+      setFriendRequestPopup(null);
+      addNotification('Friend request accepted!');
+      loadData();
+    } catch {}
+  };
+
+  const rejectFriendRequest = async (requestId) => {
+    try {
+      await apiFetch(`${API_BASE_URL}/api/friends/reject/${requestId}`, { method: 'PUT' });
+      setFriendRequestPopup(null);
+      addNotification('Friend request rejected');
+    } catch {}
+  };
 
   const playRing = () => {
     try {
@@ -268,6 +302,39 @@ export default function SnapFeedFeed({ token, currentUserId, socket, userRecord,
 
       {activeVideoCall && <SnapFeedVideoCall socket={socket} currentUserId={currentUserId} targetUser={activeVideoCall.targetUser} isIncoming={false} onEndCall={() => setActiveVideoCall(null)} />}
 
+      {/* NOTIFICATION TOASTS */}
+      <div className="fixed bottom-6 right-6 z-[70] space-y-2">
+        <AnimatePresence>
+          {notifications.map((n) => (
+            <motion.div key={n.id} initial={{ opacity: 0, x: 80, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 80, scale: 0.9 }} className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 shadow-2xl flex items-center gap-3 max-w-xs">
+              <span className="text-xs text-white">{n.text}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* FRIEND REQUEST POPUP */}
+      <AnimatePresence>
+        {friendRequestPopup && (
+          <motion.div initial={{ opacity: 0, y: -20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.9 }} className="fixed top-24 right-6 z-[70] bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl w-80">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                {friendRequestPopup.sender?.avatar ? <img src={friendRequestPopup.sender.avatar} className="w-full h-full rounded-full object-cover" /> : friendRequestPopup.sender?.fullName?.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-white">{friendRequestPopup.sender?.fullName || 'Someone'}</p>
+                <p className="text-[10px] text-slate-500">sent you a friend request</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => acceptFriendRequest(friendRequestPopup.requestId)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition">Confirm</button>
+              <button onClick={() => rejectFriendRequest(friendRequestPopup.requestId)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Delete</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* INCOMING CALL POPUP */}
       {incomingCall && (
         <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center">
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xs w-full p-8 shadow-2xl text-center">
