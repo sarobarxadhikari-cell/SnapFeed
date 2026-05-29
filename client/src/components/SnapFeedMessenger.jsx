@@ -193,15 +193,6 @@ export default function SnapFeedMessenger({ token, currentUserId, socket, onClos
 
   return (
     <>
-      {/* TOP RIGHT ICON */}
-      <div className="fixed top-4 right-20 z-50">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setIsOpen(!isOpen); if (fullPanel) setFullPanel(false); }} className="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xl relative">
-          <MessageCircle size={18} />
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-[10px] flex items-center justify-center font-bold">{getUnreadCount()}</span>
-        </motion.button>
-      </div>
-
-      {/* FLOATING POPUP (BOTTOM RIGHT) */}
       <AnimatePresence>
         {isOpen && !fullPanel && (
           <motion.div initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 30 }} className="fixed bottom-5 right-5 w-[320px] bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
